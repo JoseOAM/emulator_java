@@ -36,7 +36,7 @@ public class GPU {
       throw new IllegalStateException("Failed to initialize GLFW");
     }
 
-    window = GLFW.glfwCreateWindow(width, height, "Pixel Renderer", 0, 0);
+    window = GLFW.glfwCreateWindow(width, height, "Emulador", 0, 0);
     if (window == 0) {
       throw new IllegalStateException("Failed to create window");
     }
@@ -44,16 +44,20 @@ public class GPU {
     // Set window icon
     setWindowIcon();
 
+    // Create window in the center of the screen
     GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
     assert vidMode != null;
     GLFW.glfwSetWindowPos(window, (vidMode.width() - width) / 2, (vidMode.height() - height) / 2);
 
+    // Make the OpenGL context current
     GLFW.glfwMakeContextCurrent(window);
     GLFW.glfwSwapInterval(1);
     GLFW.glfwShowWindow(window);
 
+    // Load OpenGL functions
     GL.createCapabilities();
 
+    // Set OpenGL settings
     GL11.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     GL11.glOrtho(0, width, height, 0, -1, 1);
     GL11.glViewport(0, 0, width, height);
@@ -62,7 +66,6 @@ public class GPU {
     GLFW.glfwSetFramebufferSizeCallback(window, (window, newWidth, newHeight) -> {
       this.width = newWidth;
       this.height = newHeight;
-      GL11.glViewport(0, 0, newWidth, newHeight);
     });
   }
 
@@ -73,11 +76,13 @@ public class GPU {
       IntBuffer h = stack.mallocInt(1);
       IntBuffer comp = stack.mallocInt(1);
 
+      // Load icon
       ByteBuffer icon = STBImage.stbi_load("src/main/resources/icon.png", w, h, comp, 4);
       if (icon == null) {
         throw new RuntimeException("Failed to load icon: " + STBImage.stbi_failure_reason());
       }
 
+      // Set icon
       GLFWImage.Buffer icons = GLFWImage.malloc(1);
       icons.position(0).width(w.get(0)).height(h.get(0)).pixels(icon);
 
@@ -89,11 +94,14 @@ public class GPU {
 
   public void render() {
 
+    // Update pixel data
     updatePixelData();
 
+    // Clear the screen
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
     GL11.glBegin(GL11.GL_POINTS);
 
+    // Render pixel data
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         int index = (y * width + x) * 4;
@@ -109,6 +117,7 @@ public class GPU {
     }
     GL11.glEnd();
 
+    // Swap buffers and poll events
     GLFW.glfwSwapBuffers(window);
     GLFW.glfwPollEvents();
 
@@ -116,6 +125,7 @@ public class GPU {
 
   public void updatePixelData() {
 
+    // Get pixel data from video memory
     synchronized (videoMemory) {
       this.pixelData = this.videoMemory.readFromFrontBuffer();
       this.videoMemory.swap();
@@ -124,11 +134,13 @@ public class GPU {
 
   public boolean isRunning() {
 
+    // Check if the window should close
     return !GLFW.glfwWindowShouldClose(window);
   }
 
   public void cleanUp() {
 
+    // Destroy window and terminate GLFW
     GLFW.glfwDestroyWindow(window);
     GLFW.glfwTerminate();
   }
