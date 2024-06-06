@@ -6,17 +6,21 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
-public class VideoFrameToByteArray implements Runnable {
+public class VideoFrameToByteArray extends Thread {
 
   private static final Logger LOGGER = Logger.getLogger(VideoFrameToByteArray.class.getName());
 
-  private final VideoMemory videoMemory;
+  private final VideoBuffer videoBuffer;
 
   private final String videoFilePath;
 
-  public VideoFrameToByteArray(VideoMemory videoMemory, String videoFilePath) {
+  public volatile int width;
 
-    this.videoMemory = videoMemory;
+  public volatile int height;
+
+  public VideoFrameToByteArray(VideoBuffer videoBuffer, String videoFilePath) {
+
+    this.videoBuffer = videoBuffer;
     this.videoFilePath = videoFilePath;
   }
 
@@ -34,22 +38,28 @@ public class VideoFrameToByteArray implements Runnable {
       Frame frame;
       while ((frame = grabber.grabImage()) != null) {
         byte[] frameBytes = frameToByteArray(frame);
-        synchronized (this.videoMemory) {
-          videoMemory.writeToBackBuffer(frameBytes);
+        synchronized (this.videoBuffer) {
+          videoBuffer.writeToBackBuffer(frameBytes);
         }
       }
       grabber.stop();
     } catch (Exception e) {
-      LOGGER.severe("Error processing video file: " + e.getMessage());
+      LOGGER.severe(STR."Error processing video file: \{e.getMessage()}");
     }
   }
 
-  private static byte[] frameToByteArray(Frame frame) {
+  private byte[] frameToByteArray(Frame frame) {
 
     Java2DFrameConverter converter = new Java2DFrameConverter();
     BufferedImage image = converter.getBufferedImage(frame);
 
-    return ImageReader.readImage(image, 800, 600);
+    return ImageReader.readImage(image, this.width, this.height);
+  }
+
+  public synchronized void setResolution(final int width, final int height) {
+
+    this.width = width;
+    this.height = height;
   }
 
 }
