@@ -9,10 +9,11 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>22</maven.compiler.source>
+    <maven.compiler.target>22</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <lwjgl.version>3.3.3</lwjgl.version>
+    <lombok.version>1.18.32</lombok.version>
   </properties>
 
   <repositories>
@@ -543,6 +544,28 @@
       <artifactId>lwjgl-zstd</artifactId>
       <classifier>${lwjgl.natives}</classifier>
     </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacv</artifactId>
+      <version>1.5.10</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacv-platform</artifactId>
+      <version>1.5.10</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>RELEASE</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 
@@ -562,6 +585,15 @@
           </archive>
         </configuration>
       </plugin>
-      </plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>22</source>
+          <target>22</target>
+          <compilerArgs>--enable-preview</compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
