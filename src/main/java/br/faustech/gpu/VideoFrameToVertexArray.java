@@ -15,11 +15,11 @@ public class VideoFrameToVertexArray extends Thread {
 
   private final String videoFilePath;
 
-  public final int width;
+  public volatile int width;
 
-  public final int height;
+  public volatile int height;
 
-  private final Java2DFrameConverter converter;
+  private final Java2DFrameConverter converter = new Java2DFrameConverter();
 
   public VideoFrameToVertexArray(FrameBuffer frameBuffer, String videoFilePath, int width,
       int height) {
@@ -28,7 +28,6 @@ public class VideoFrameToVertexArray extends Thread {
     this.videoFilePath = videoFilePath;
     this.width = width;
     this.height = height;
-    this.converter = new Java2DFrameConverter();
   }
 
   @Override
@@ -43,17 +42,18 @@ public class VideoFrameToVertexArray extends Thread {
       grabber.start();
       Frame frame;
       while ((frame = grabber.grabImage()) != null) {
-        long frameStartTime = System.currentTimeMillis();
         float[] vertexData = frameToVertexData(frame);
-        synchronized (this.frameBuffer) {
+        synchronized (frameBuffer) {
           frameBuffer.writeToBackBuffer(vertexData);
           frameBuffer.swap();
         }
 
-        // Calculate the time to sleep to maintain approximately 60 FPS
-        long frameProcessTime = System.currentTimeMillis() - frameStartTime;
-        long sleepTime = Math.max(16 - frameProcessTime, 0); // 16 ms for 60 FPS
-        Thread.sleep(sleepTime);
+        long sleepTime = 1000 / 60;
+        try {
+          Thread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+          LOGGER.severe("Error sleeping thread: " + e.getMessage());
+        }
       }
       grabber.stop();
     } catch (Exception e) {
@@ -63,17 +63,17 @@ public class VideoFrameToVertexArray extends Thread {
 
   private float[] frameToVertexData(Frame frame) {
 
-    BufferedImage originalImage = this.converter.getBufferedImage(frame);
-    BufferedImage resizedImage = resizeImage(originalImage, this.width, this.height);
+    BufferedImage originalImage = converter.getBufferedImage(frame);
+    BufferedImage resizedImage = resizeImage(originalImage, width, height);
 
     // Use the specified width and height for the vertices array
-    float[] vertices = new float[width * height * 6];
+    float[] vertices = new float[width * height * 8];
     int index = 0;
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         float normX = (x / (float) width) * 2 - 1;
-        float normY = ((height - y) / (float) height) * 2 - 1; // Inverte a coordenada Y
+        float normY = (y / (float) height) * 2 - 1; // Inverte a coordenada Y
 
         int color = resizedImage.getRGB(x, y);
         float a = ((color >> 24) & 0xFF) / 255.0f;
@@ -81,18 +81,24 @@ public class VideoFrameToVertexArray extends Thread {
         float g = ((color >> 8) & 0xFF) / 255.0f;
         float b = (color & 0xFF) / 255.0f;
 
+        // Definir coordenadas de textura para o vértice (u, v)
+        float u = x / (float) width;
+        float v = y / (float) height;
+
         vertices[index++] = normX;
         vertices[index++] = normY;
         vertices[index++] = r;
         vertices[index++] = g;
         vertices[index++] = b;
         vertices[index++] = a;
+        vertices[index++] = u;
+        vertices[index++] = v;
       }
     }
     return vertices;
   }
 
-  private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
+  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
       int targetHeight) {
 
     BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,

@@ -1,7 +1,7 @@
 package faustech.gpu;
 
-import br.faustech.gpu.GPU;
 import br.faustech.gpu.FrameBuffer;
+import br.faustech.gpu.GPU;
 import br.faustech.gpu.VideoFrameToVertexArray;
 import java.lang.Thread.State;
 import org.junit.Test;
@@ -9,16 +9,21 @@ import org.junit.Test;
 
 public class GPUTest {
 
+  private static final String VIDEO_PATH = "";
+
   @Test
   public void gpuTest() {
 
-    FrameBuffer frameBuffer = new FrameBuffer(800 * 600 * 6);
+    int WIDTH = 800;
+    int HEIGHT = 600;
 
-    GPU gpu = new GPU(800, 600, frameBuffer);
+    FrameBuffer frameBuffer = new FrameBuffer(WIDTH * HEIGHT * 8);
+
+    GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
     gpu.start();
 
     VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(frameBuffer,
-        "C:/Users/ffsga/Downloads/video2.mp4", 800, 600);
+        VIDEO_PATH, WIDTH, HEIGHT);
     videoProcessor.start();
 
     while (gpu.isAlive()) {
