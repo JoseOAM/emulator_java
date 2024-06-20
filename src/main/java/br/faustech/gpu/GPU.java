@@ -24,7 +24,7 @@ public class GPU extends ComponentThread {
 
   public GPU(int width, int height, FrameBuffer frameBuffer) {
 
-    super(new byte[10], ComponentType.GPU);
+    super(ComponentType.GPU.toString().getBytes(), ComponentType.GPU);
     this.width = width;
     this.height = height;
     this.frameBuffer = frameBuffer;

@@ -2,24 +2,16 @@ package br.faustech.memory;
 
 import br.faustech.comum.Component;
 import br.faustech.comum.ComponentType;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
 public class Memory extends Component {
 
   private final byte[] memory;
 
-  @Setter private boolean writable;
+  private final boolean writable;
 
   public Memory(final int memorySize) {
 
-    byte[] address = new byte[10];
-    for (int i = 0; i < address.length; i++) {
-      address[i] = (byte) (Math.random() * 256);
-    }
-
-    super(address, ComponentType.MEMORY);
+    super(ComponentType.MEMORY.toString().getBytes(), ComponentType.MEMORY);
 
     this.memory = new byte[memorySize];
     this.writable = true;

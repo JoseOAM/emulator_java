@@ -1,4 +1,4 @@
-package faustech.cpu;
+package br.faustech.cpu;
 
 import static br.faustech.cpu.Decoder.decodeInstruction;
 import static org.junit.Assert.assertEquals;
@@ -70,8 +70,8 @@ public class DecoderTest {
     assertEquals("and rd=5, rs1=3, rs2=0", type);
 
     //Set instruction LUI
-    int instruction = 0b00000000000000011101001010110111;
-    String type = decodeInstruction(instruction);
+    instruction = 0b00000000000000011101001010110111;
+    type = decodeInstruction(instruction);
     // Verify the result
     assertEquals("lui rd=5, imm=29", type);
 
@@ -279,4 +279,5 @@ public class DecoderTest {
     // Verify the result
     assertEquals("csrrci rd=5, imm=0", type);
   }
+
 }

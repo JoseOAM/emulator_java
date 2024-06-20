@@ -1,5 +1,7 @@
 package br.faustech.gpu;
 
+import br.faustech.bus.Bus;
+import br.faustech.comum.ComponentType;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
@@ -17,23 +19,37 @@ public class VideoFrameToVertexArray extends Thread {
 
   private final Java2DFrameConverter converter = new Java2DFrameConverter();
 
-  public volatile int width;
+  private final int width;
 
-  public volatile int height;
+  private final int height;
+
+  private final Bus bus;
 
   public VideoFrameToVertexArray(FrameBuffer frameBuffer, String videoFilePath, int width,
-      int height) {
+      int height, final Bus bus) {
 
     this.frameBuffer = frameBuffer;
     this.videoFilePath = videoFilePath;
     this.width = width;
     this.height = height;
+    this.bus = bus;
+  }
+
+  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
+      int targetHeight) {
+
+    BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,
+        BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2d = resizedImage.createGraphics();
+    g2d.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+    g2d.dispose();
+    return resizedImage;
   }
 
   @Override
   public void run() {
 
-    processVideo();
+    this.processVideo();
   }
 
   private void processVideo() {
@@ -45,8 +61,16 @@ public class VideoFrameToVertexArray extends Thread {
         long time = System.currentTimeMillis();
         float[] vertexData = frameToVertexData(frame);
         synchronized (frameBuffer) {
-          frameBuffer.writeToBackBufferFromFloats(vertexData);
-          frameBuffer.swap();
+          // float to byte conversion
+          byte[] vertexDataByte = new byte[vertexData.length * 4];
+          for (int i = 0; i < vertexData.length; i++) {
+            int intBits = Float.floatToIntBits(vertexData[i]);
+            vertexDataByte[i * 4] = (byte) (intBits & 0xFF);
+            vertexDataByte[i * 4 + 1] = (byte) ((intBits >> 8) & 0xFF);
+            vertexDataByte[i * 4 + 2] = (byte) ((intBits >> 16) & 0xFF);
+            vertexDataByte[i * 4 + 3] = (byte) ((intBits >> 24) & 0xFF);
+          }
+          bus.write(ComponentType.FRAME_BUFFER, vertexDataByte);
         }
         time = System.currentTimeMillis() - time;
         long sleepTime = Math.max(0, 1000 / 60 - time);
@@ -54,9 +78,11 @@ public class VideoFrameToVertexArray extends Thread {
           Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
           LOGGER.severe(String.format("Error sleeping thread: %s", e.getMessage()));
+          return;
         }
       }
       grabber.stop();
+      this.processVideo();
     } catch (Exception e) {
       LOGGER.severe(String.format("Error processing video: %s", e.getMessage()));
     }
@@ -97,17 +123,6 @@ public class VideoFrameToVertexArray extends Thread {
       }
     }
     return vertices;
-  }
-
-  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
-      int targetHeight) {
-
-    BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,
-        BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2d = resizedImage.createGraphics();
-    g2d.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
-    g2d.dispose();
-    return resizedImage;
   }
 
 }

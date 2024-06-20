@@ -14,9 +14,15 @@ public class FrameBuffer extends Component {
 
   public FrameBuffer(final int bufferSize) {
 
-    super(new byte[10], ComponentType.VIDEO_BUFFER);
+    super(ComponentType.FRAME_BUFFER.toString().getBytes(), ComponentType.FRAME_BUFFER);
     this.frontBuffer = new byte[bufferSize * 4]; // 4 bytes per float
     this.backBuffer = new byte[bufferSize * 4];
+  }
+
+  public void writeToBackBuffer(byte[] data) {
+
+    System.arraycopy(data, 0, backBuffer, 0, data.length);
+    this.swap();
   }
 
   public void swap() {
@@ -24,11 +30,6 @@ public class FrameBuffer extends Component {
     byte[] temp = frontBuffer;
     frontBuffer = backBuffer;
     backBuffer = temp;
-  }
-
-  public void writeToBackBuffer(byte[] data) {
-
-    System.arraycopy(data, 0, backBuffer, 0, data.length);
   }
 
   public byte[] readFromFrontBuffer() {

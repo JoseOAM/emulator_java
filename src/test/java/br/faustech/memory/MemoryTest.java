@@ -1,10 +1,8 @@
-package faustech.memory;
+package br.faustech.memory;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
-import br.faustech.memory.Memory;
-import br.faustech.memory.MemoryException;
 import java.util.Arrays;
 import org.junit.Test;
 
