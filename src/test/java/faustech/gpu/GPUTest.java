@@ -1,29 +1,38 @@
 package faustech.gpu;
 
+import br.faustech.gpu.FrameBuffer;
 import br.faustech.gpu.GPU;
-import br.faustech.gpu.VideoBuffer;
-import br.faustech.gpu.VideoFrameToByteArray;
+import br.faustech.gpu.VideoFrameToVertexArray;
 import java.lang.Thread.State;
 import org.junit.Test;
 
 
 public class GPUTest {
 
+  private static final String VIDEO_PATH = "";
+
   @Test
   public void gpuTest() {
 
-    VideoBuffer videoBuffer = new VideoBuffer(1920 * 1080 * 4, 1920 * 1080 * 4);
+    int WIDTH = 800;
+    int HEIGHT = 600;
 
-    GPU gpu = new GPU(800, 600, videoBuffer);
+    FrameBuffer frameBuffer = new FrameBuffer(WIDTH * HEIGHT * 8);
+
+    GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
     gpu.start();
 
-    VideoFrameToByteArray videoProcessor = new VideoFrameToByteArray(videoBuffer,
-        "C:/Users/ffsga/Downloads/video2.mp4");
+    VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(frameBuffer,
+        VIDEO_PATH, WIDTH, HEIGHT);
     videoProcessor.start();
 
-    do {
-      videoProcessor.setResolution(gpu.getWidth(), gpu.getHeight());
-    } while (gpu.isAlive());
+    while (gpu.isAlive()) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
 
     // Stop the video processor thread
     if (videoProcessor.getState() != State.TERMINATED) {
@@ -35,4 +44,5 @@ public class GPUTest {
       gpu.interrupt();
     }
   }
+
 }
