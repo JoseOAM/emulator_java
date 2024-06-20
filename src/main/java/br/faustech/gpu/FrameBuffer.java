@@ -54,6 +54,7 @@ public class FrameBuffer extends Component {
     FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
     floatBuffer.put(data);
     backBuffer = byteBuffer.array();
+    this.swap();
   }
 
 }

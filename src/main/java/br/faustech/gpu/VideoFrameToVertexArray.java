@@ -4,16 +4,15 @@ import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentType;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.util.logging.Logger;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
+@Log
+@RequiredArgsConstructor
 public class VideoFrameToVertexArray extends Thread {
-
-  private static final Logger LOGGER = Logger.getLogger(VideoFrameToVertexArray.class.getName());
-
-  private final FrameBuffer frameBuffer;
 
   private final String videoFilePath;
 
@@ -24,16 +23,6 @@ public class VideoFrameToVertexArray extends Thread {
   private final int height;
 
   private final Bus bus;
-
-  public VideoFrameToVertexArray(FrameBuffer frameBuffer, String videoFilePath, int width,
-      int height, final Bus bus) {
-
-    this.frameBuffer = frameBuffer;
-    this.videoFilePath = videoFilePath;
-    this.width = width;
-    this.height = height;
-    this.bus = bus;
-  }
 
   private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
       int targetHeight) {
@@ -60,31 +49,31 @@ public class VideoFrameToVertexArray extends Thread {
       while ((frame = grabber.grabImage()) != null) {
         long time = System.currentTimeMillis();
         float[] vertexData = frameToVertexData(frame);
-        synchronized (frameBuffer) {
-          // float to byte conversion
-          byte[] vertexDataByte = new byte[vertexData.length * 4];
-          for (int i = 0; i < vertexData.length; i++) {
-            int intBits = Float.floatToIntBits(vertexData[i]);
-            vertexDataByte[i * 4] = (byte) (intBits & 0xFF);
-            vertexDataByte[i * 4 + 1] = (byte) ((intBits >> 8) & 0xFF);
-            vertexDataByte[i * 4 + 2] = (byte) ((intBits >> 16) & 0xFF);
-            vertexDataByte[i * 4 + 3] = (byte) ((intBits >> 24) & 0xFF);
-          }
-          bus.write(ComponentType.FRAME_BUFFER, vertexDataByte);
+
+        // float to byte conversion
+        byte[] vertexDataByte = new byte[vertexData.length * 4];
+        for (int i = 0; i < vertexData.length; i++) {
+          int intBits = Float.floatToIntBits(vertexData[i]);
+          vertexDataByte[i * 4] = (byte) (intBits & 0xFF);
+          vertexDataByte[i * 4 + 1] = (byte) ((intBits >> 8) & 0xFF);
+          vertexDataByte[i * 4 + 2] = (byte) ((intBits >> 16) & 0xFF);
+          vertexDataByte[i * 4 + 3] = (byte) ((intBits >> 24) & 0xFF);
         }
+        bus.write(ComponentType.FRAME_BUFFER, vertexDataByte);
+
         time = System.currentTimeMillis() - time;
         long sleepTime = Math.max(0, 1000 / 60 - time);
         try {
           Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
-          LOGGER.severe(String.format("Error sleeping thread: %s", e.getMessage()));
+          log.severe(String.format("Error sleeping thread: %s", e.getMessage()));
           return;
         }
       }
       grabber.stop();
       this.processVideo();
     } catch (Exception e) {
-      LOGGER.severe(String.format("Error processing video: %s", e.getMessage()));
+      log.severe(String.format("Error processing video: %s", e.getMessage()));
     }
   }
 

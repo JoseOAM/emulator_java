@@ -5,7 +5,9 @@ import br.faustech.comum.ComponentType;
 import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
+import lombok.extern.java.Log;
 
+@Log
 public class Bus extends Component {
 
   private final FrameBuffer frameBuffer;
@@ -36,7 +38,7 @@ public class Bus extends Component {
           throw new IllegalArgumentException("Invalid component type");
       }
     } catch (MemoryException e) {
-      e.printStackTrace();
+      log.severe(e.getMessage());
     }
   }
 
@@ -55,8 +57,8 @@ public class Bus extends Component {
           throw new IllegalArgumentException("Invalid component type");
       }
     } catch (MemoryException e) {
-      e.printStackTrace();
-      return null;
+      log.severe(e.getMessage());
+      return new byte[0];
     }
   }
 

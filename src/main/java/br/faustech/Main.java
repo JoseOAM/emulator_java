@@ -23,7 +23,7 @@ public class Main {
     final GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
     final Memory memory = new Memory(MEMORY_SIZE);
     final Bus bus = new Bus(frameBuffer, memory);
-    final VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(frameBuffer,
+    final VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(
         VIDEO_PATH, WIDTH, HEIGHT, bus);
 
     videoProcessor.start();
