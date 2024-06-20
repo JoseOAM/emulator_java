@@ -82,7 +82,7 @@ public class DecoderTest {
     assertEquals("auipc rd=5, imm=24", type);
 
     //Set instruction JAL
-    instruction = 0b00000000000000011001001010110011;
+    instruction = 0b00000000000000011000001011101111;
     type = decodeInstruction(instruction);
     // Verify the result
     assertEquals("jal rd=5, imm=98304", type);
