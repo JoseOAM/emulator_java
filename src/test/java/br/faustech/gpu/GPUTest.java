@@ -13,8 +13,8 @@ public class GPUTest {
   @Test
   public void gpuTest() {
 
-    int WIDTH = 512;
-    int HEIGHT = 512;
+    int WIDTH = 1280;
+    int HEIGHT = 720;
 
     FrameBuffer frameBuffer = new FrameBuffer(WIDTH * HEIGHT * 8);
 
