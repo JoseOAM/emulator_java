@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 public class Memory extends Component {
 
-  private byte[] memory;
+  private final byte[] memory;
 
   @Setter private boolean writable;
 

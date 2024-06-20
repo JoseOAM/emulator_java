@@ -16,13 +16,13 @@ import org.lwjgl.system.MemoryStack;
 @RequiredArgsConstructor
 public class Window {
 
-  private long window;
-
   private final int width;
 
   private final int height;
 
   private final String title;
+
+  private long window;
 
   public void init() {
 

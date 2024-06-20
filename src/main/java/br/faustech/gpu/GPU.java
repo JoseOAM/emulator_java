@@ -51,8 +51,8 @@ public class GPU extends ComponentThread {
     window = new Window(width, height, "Emulador");
     window.init();
     window.setResizeCallback((_, newWidth, newHeight) -> {
-//      width = newWidth;
-//      height = newHeight;
+      width = newWidth;
+      height = newHeight;
       GL46.glViewport(0, 0, newWidth, newHeight);
       GL46.glMatrixMode(GL_PROJECTION);
       GL46.glLoadIdentity();
@@ -64,7 +64,7 @@ public class GPU extends ComponentThread {
     shaderProgram = new ShaderProgram();
     shaderProgram.loadShaders();
 
-    renderData = new RenderData();
+    renderData = new RenderData(width, height);
     renderData.setup();
 
     window.setIcon();
@@ -76,12 +76,14 @@ public class GPU extends ComponentThread {
   }
 
   private void render() {
+
+    GL46.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
     shaderProgram.use();
-    float[] vertices = frameBuffer.readFromFrontBuffer();
+    float[] frame = frameBuffer.readFromFrontBufferAsFloats();
 
-    renderData.update(vertices, width, height);
+    renderData.update(frame);
     renderData.draw();
 
     window.swapBuffers();

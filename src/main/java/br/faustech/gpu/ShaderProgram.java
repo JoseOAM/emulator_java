@@ -45,16 +45,6 @@ public class ShaderProgram {
     GL46.glDeleteShader(fragmentShader);
   }
 
-  public void use() {
-
-    GL46.glUseProgram(programId);
-  }
-
-  public void cleanup() {
-
-    GL46.glDeleteProgram(programId);
-  }
-
   private int compileShader(int type, String source) {
 
     int shader = GL46.glCreateShader(type);
@@ -62,6 +52,16 @@ public class ShaderProgram {
     GL46.glCompileShader(shader);
     checkCompileStatus(shader);
     return shader;
+  }
+
+  private void checkLinkStatus(int program) {
+
+    IntBuffer status = BufferUtils.createIntBuffer(1);
+    GL46.glGetProgramiv(program, GL46.GL_LINK_STATUS, status);
+    if (status.get(0) == GL46.GL_FALSE) {
+      throw new RuntimeException(
+          String.format("Program link error: %s", GL46.glGetProgramInfoLog(program)));
+    }
   }
 
   private void checkCompileStatus(int shader) {
@@ -74,14 +74,14 @@ public class ShaderProgram {
     }
   }
 
-  private void checkLinkStatus(int program) {
+  public void use() {
 
-    IntBuffer status = BufferUtils.createIntBuffer(1);
-    GL46.glGetProgramiv(program, GL46.GL_LINK_STATUS, status);
-    if (status.get(0) == GL46.GL_FALSE) {
-      throw new RuntimeException(
-          String.format("Program link error: %s", GL46.glGetProgramInfoLog(program)));
-    }
+    GL46.glUseProgram(programId);
+  }
+
+  public void cleanup() {
+
+    GL46.glDeleteProgram(programId);
   }
 
 }

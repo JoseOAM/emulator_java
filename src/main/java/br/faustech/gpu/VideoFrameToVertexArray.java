@@ -15,11 +15,11 @@ public class VideoFrameToVertexArray extends Thread {
 
   private final String videoFilePath;
 
+  private final Java2DFrameConverter converter = new Java2DFrameConverter();
+
   public volatile int width;
 
   public volatile int height;
-
-  private final Java2DFrameConverter converter = new Java2DFrameConverter();
 
   public VideoFrameToVertexArray(FrameBuffer frameBuffer, String videoFilePath, int width,
       int height) {
@@ -42,22 +42,23 @@ public class VideoFrameToVertexArray extends Thread {
       grabber.start();
       Frame frame;
       while ((frame = grabber.grabImage()) != null) {
+        long time = System.currentTimeMillis();
         float[] vertexData = frameToVertexData(frame);
         synchronized (frameBuffer) {
-          frameBuffer.writeToBackBuffer(vertexData);
+          frameBuffer.writeToBackBufferFromFloats(vertexData);
           frameBuffer.swap();
         }
-
-        long sleepTime = 1000 / 60;
+        time = System.currentTimeMillis() - time;
+        long sleepTime = Math.max(0, 1000 / 60 - time);
         try {
           Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
-          LOGGER.severe("Error sleeping thread: " + e.getMessage());
+          LOGGER.severe(String.format("Error sleeping thread: %s", e.getMessage()));
         }
       }
       grabber.stop();
     } catch (Exception e) {
-      LOGGER.severe("Error processing video file: " + e.getMessage());
+      LOGGER.severe(String.format("Error processing video: %s", e.getMessage()));
     }
   }
 
@@ -73,7 +74,7 @@ public class VideoFrameToVertexArray extends Thread {
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         float normX = (x / (float) width) * 2 - 1;
-        float normY = (y / (float) height) * 2 - 1; // Inverte a coordenada Y
+        float normY = ((height - y) / (float) height) * 2 - 1; // Invert Y coordinate
 
         int color = resizedImage.getRGB(x, y);
         float a = ((color >> 24) & 0xFF) / 255.0f;
@@ -81,7 +82,7 @@ public class VideoFrameToVertexArray extends Thread {
         float g = ((color >> 8) & 0xFF) / 255.0f;
         float b = (color & 0xFF) / 255.0f;
 
-        // Definir coordenadas de textura para o vértice (u, v)
+        // Set texture coordinates for the vertex (u, v)
         float u = x / (float) width;
         float v = y / (float) height;
 
