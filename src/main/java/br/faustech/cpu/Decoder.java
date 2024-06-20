@@ -2,12 +2,12 @@ package br.faustech.cpu;
 
 public class Decoder {
 
-  // Método para decodificar a instrução
+  // Method to decode the instruction
   public static String decodeInstruction(int instruction) {
-    // Isola os 8 bits menos significativos da instrução
-    int opcode = instruction & 0x7F; // 0x7F = 0b01111111 (máscara para 7 bits)
+    // Isolates the 8 least significant bits of the instruction
+    int opcode = instruction & 0x7F; // 0x7F = 0b01111111 (mask for 7 bits)
 
-    // Comparar o Opcode com os valores conhecidos para determinar o tipo de instrução
+    // Compare the Opcode with known values to determine the type of instruction
     return switch (opcode) {
       case 0x33 -> // 0b0110011
           decodeRType(instruction);            //R-Type
@@ -29,20 +29,20 @@ public class Decoder {
           decodeUType(instruction);            //U-Type
       case 0x6F -> // 0b1101111
           decodeJType(instruction);            //J-Type
-      default -> "Unknown Type";                  //Opcode desconhecido
+      default -> "Unknown Type";               //Unknown Opcode
     };
   }
 
-  //Faz a Decodificação dos tipo R
+  // Decodes R-type instructions
   private static String decodeRType(int instruction) {
-    //Constroi o formato da instrucao para o tipo R
+    // Constructs the instruction format for R-type
     int funct3 = (instruction >> 12) & 0x7;
     int funct7 = (instruction >> 25) & 0x7F;
     int rd = (instruction >> 7) & 0x1F;
     int rs1 = (instruction >> 15) & 0x1F;
     int rs2 = (instruction >> 20) & 0x1F;
 
-    String operation; // Seta o nome do operador que será utilizado
+    String operation; // Sets the name of the operator to be used
 
     switch (funct3) {
       case 0b000:
@@ -85,9 +85,9 @@ public class Decoder {
     return String.format("%s rd=%d, rs1=%d, rs2=%d", operation, rd, rs1, rs2);
   }
 
-  //Faz a Decodificação dos tipo I
+  // Decodes I-type instructions for jalr
   private static String decodeITypeJalr(int instruction) {
-    //Constroi o formato da instrucao para o tipo I-Jalr
+    // Constructs the instruction format for I-type Jalr
     int imm = instruction >> 20;
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
@@ -99,7 +99,7 @@ public class Decoder {
   }
 
   private static String decodeITypeLoad(int instruction) {
-    //Constroi o formato da instrucao para o tipo I-Load
+    // Constructs the instruction format for I-type Load
     int imm = instruction >> 20;
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
@@ -118,7 +118,7 @@ public class Decoder {
   }
 
   private static String decodeITypeImmediate(int instruction) {
-    //Constroi o formato da instrucao para o tipo I-Immediate
+    // Constructs the instruction format for I-type Immediate
     int imm = instruction >> 20;
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
@@ -165,7 +165,7 @@ public class Decoder {
   }
 
   private static String decodeITypeCSR(int instruction) {
-    //Constroi o formato da instrucao para o tipo I-Csr
+    // Constructs the instruction format for I-type Csr
     int csr = instruction >> 20;
     int rs1_or_zimm = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
@@ -204,12 +204,11 @@ public class Decoder {
     }
 
     return String.format("%s rd=%d, csr=%d, rs1_or_zimm=%d", operation, rd, csr, rs1_or_zimm);
-
   }
 
-  //Faz a Decodificação dos tipo S
+  // Decodes S-type instructions
   private static String decodeSType(int instruction) {
-    //Constroi o formato da instrucao para o tipo S
+    // Constructs the instruction format for S-type
     int imm11_5 = (instruction >> 25) & 0x7F;
     int rs2 = (instruction >> 20) & 0x1F;
     int rs1 = (instruction >> 15) & 0x1F;
@@ -229,9 +228,9 @@ public class Decoder {
     return String.format("%s rs1=%d, rs2=%d, imm=%d", operation, rs1, rs2, imm);
   }
 
-  //Faz a Decodificação dos tipo B
+  // Decodes B-type instructions
   private static String decodeBType(int instruction) {
-    //Constroi o formato da instrucao para o tipo B
+    // Constructs the instruction format for B-type
     int imm12 = (instruction >> 31) & 0x1;
     int imm10_5 = (instruction >> 25) & 0x3F;
     int rs2 = (instruction >> 20) & 0x1F;
@@ -241,7 +240,7 @@ public class Decoder {
     int imm11 = (instruction >> 7) & 0x1;
     int opcode = instruction & 0x7F;
 
-    // Montar o campo immediate
+    // Construct the immediate field
     int imm = (imm12 << 12) | (imm11 << 11) | (imm10_5 << 5) | (imm4_1 << 1);
 
     String operation = switch (funct3) {
@@ -257,9 +256,9 @@ public class Decoder {
     return String.format("%s rs1=%d, rs2=%d, imm=%d", operation, rs1, rs2, imm);
   }
 
-  //Faz a Decodificação dos tipo U
+  // Decodes U-type instructions
   private static String decodeUType(int instruction) {
-    //Constroi o formato da instrucao para o tipo U
+    // Constructs the instruction format for U-type
     int imm31_12 = (instruction >> 12);
     int rd = (instruction >> 7) & 0x1F;
     int opcode = instruction & 0x7F;
@@ -273,9 +272,9 @@ public class Decoder {
     return String.format("%s rd=%d, imm=%d", operation, rd, imm31_12);
   }
 
-  //Faz a Decodificação dos tipo J
+  // Decodes J-type instructions
   private static String decodeJType(int instruction) {
-    //Constroi o formato da instrucao para o tipo J
+    // Constructs the instruction format for J-type
     int imm20 = (instruction >> 31) & 0x1;
     int imm10_1 = (instruction >> 21) & 0x3FF;
     int imm11 = (instruction >> 20) & 0x1;
@@ -283,10 +282,10 @@ public class Decoder {
     int rd = (instruction >> 7) & 0x1F;
     int opcode = instruction & 0x7F;
 
-    // Montar o campo immediate
+    // Construct the immediate field
     int imm = (imm20 << 20) | (imm19_12 << 12) | (imm11 << 11) | (imm10_1 << 1);
 
-    String operation = "jal"; // J-Type é sempre Jump And Link
+    String operation = "jal"; // J-Type is always Jump And Link
 
     return String.format("%s rd=%d, imm=%d", operation, rd, imm);
   }

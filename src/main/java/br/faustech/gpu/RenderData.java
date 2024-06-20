@@ -14,13 +14,12 @@ public class RenderData {
 
   private int numVertices; // Number of vertices to draw
 
-  private FloatBuffer textureBuffer; // Buffer for texture data
-
   private int[] pboIds; // Array to store PBO IDs
 
   private int nextPboIndex = 0; // Index of the next PBO to use
 
   public RenderData(final int width, final int height) {
+
     this.width = width;
     this.height = height;
   }
@@ -53,7 +52,8 @@ public class RenderData {
     // Texture (Texture)
     textureId = GL46.glGenTextures();
     GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
-    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_LINEAR_MIPMAP_LINEAR);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER,
+        GL46.GL_LINEAR_MIPMAP_LINEAR);
     GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_LINEAR);
     GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA32F, width, height, 0, GL46.GL_RGBA,
         GL46.GL_FLOAT, (FloatBuffer) null);
@@ -116,4 +116,5 @@ public class RenderData {
     GL46.glDeleteTextures(textureId);
     GL46.glDeleteBuffers(pboIds);
   }
+
 }
