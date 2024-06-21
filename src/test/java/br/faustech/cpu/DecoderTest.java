@@ -85,7 +85,7 @@ public class DecoderTest {
     instruction = 0b00000000000000011000001011101111;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("jal rd=5, imm=98304", type);
+    assertEquals("jal rd=5, imm=49152", type);
 
     //Set instruction JALR
     instruction = 0b00000000000000011000001011100111;
@@ -127,55 +127,55 @@ public class DecoderTest {
     instruction = 0b00000000000000011000001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("beq rs1=3, rs2=0, imm=0", type);
+    assertEquals("beq rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction BNE
     instruction = 0b00000000000000011001001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("bne rs1=3, rs2=0, imm=0", type);
+    assertEquals("bne rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction BLT
     instruction = 0b00000000000000011100001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("blt rs1=3, rs2=0, imm=0", type);
+    assertEquals("blt rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction BGE
     instruction = 0b00000000000000011101001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("bge rs1=3, rs2=0, imm=0", type);
+    assertEquals("bge rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction BLTU
     instruction = 0b00000000000000011110001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("bltu rs1=3, rs2=0, imm=0", type);
+    assertEquals("bltu rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction BGEU
     instruction = 0b00000000000000011111001011100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("bgeu rs1=3, rs2=0, imm=0", type);
+    assertEquals("bgeu rs1=3, rs2=0, imm=1026", type);
 
     // Set instruction SB
     instruction = 0b00000000000000011000001010100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("sb rs1=3, rs2=0, imm=0", type);
+    assertEquals("sb rs1=3, rs2=0, imm=5", type);
 
     // Set instruction SH
     instruction = 0b00000000000000011001001010100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("sh rs1=3, rs2=0, imm=0", type);
+    assertEquals("sh rs1=3, rs2=0, imm=5", type);
 
     // Set instruction SW
     instruction = 0b00000000000000011010001010100011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("sw rs1=3, rs2=0, imm=0", type);
+    assertEquals("sw rs1=3, rs2=0, imm=5", type);
 
     // Set instruction ADDI
     instruction = 0b00000000000000011000001010010011;
@@ -217,19 +217,19 @@ public class DecoderTest {
     instruction = 0b00000000000000011001001010010011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("slli rd=5, rs1=3, imm=0", type);
+    assertEquals("slli rd=5, rs1=3, shamt=0", type);
 
     // Set instruction SRLI
     instruction = 0b00000000000000011101001010010011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("srli rd=5, rs1=3, imm=0", type);
+    assertEquals("srli rd=5, rs1=3, shamt=0", type);
 
     // Set instruction SRAI
     instruction = 0b01000000000000011101001010010011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("srai rd=5, rs1=3, imm=0", type);
+    assertEquals("srai rd=5, rs1=3, shamt=0", type);
 
     // Set instruction ECALL
     instruction = 0b00000000000000011000001011110011;
@@ -247,37 +247,37 @@ public class DecoderTest {
     instruction = 0b00000000000000011001001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrw rd=5, rs1=3, csr=0", type);
+    assertEquals("csrrw rd=5, csr=0, rs1=3", type);
 
     // Set instruction CSRRS
     instruction = 0b00000000000000011010001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrs rd=5, rs1=3, csr=0", type);
+    assertEquals("csrrs rd=5, csr=0, rs1=3", type);
 
     // Set instruction CSRRC
     instruction = 0b00000000000000011011001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrc rd=5, rs1=3, csr=0", type);
+    assertEquals("csrrc rd=5, csr=0, rs1=3", type);
 
     // Set instruction CSRRWI
     instruction = 0b00000000000000011101001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrwi rd=5, imm=0", type);
+    assertEquals("csrrwi rd=5, csr=0, rs1=3", type);
 
     // Set instruction CSRRSI
     instruction = 0b00000000000000011110001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrsi rd=5, imm=0", type);
+    assertEquals("csrrsi rd=5, csr=0, rs1=3", type);
 
     // Set instruction CSRRCI
     instruction = 0b00000000000000011111001011110011;
     type = decodeInstruction(instruction);
     // Verify the result
-    assertEquals("csrrci rd=5, imm=0", type);
+    assertEquals("csrrci rd=5, csr=0, rs1=3", type);
   }
 
 }

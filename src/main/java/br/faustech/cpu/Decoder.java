@@ -64,14 +64,14 @@ public class Decoder {
 
   // Decode the B Type instruction
   private static String decodeBType(int instruction) {
-    int imm12 = (instruction >> 31) & 0x1;
+    int imm12 = (instruction >> 31) & 0x01;
     int imm10_5 = (instruction >> 25) & 0x3F;
     int rs2 = (instruction >> 20) & 0x1F;
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
     int imm4_1 = (instruction >> 8) & 0xF;
     int imm11 = (instruction >> 7) & 0x1;
-    int imm = (imm12 << 12) | (imm11 << 11) | (imm10_5 << 5) | (imm4_1 << 1);
+    int imm = (imm12 << 11) | (imm11 << 10) | (imm10_5 << 4) | (imm4_1);
 
     String operation = switch (funct3) {
       case 0b000 -> "beq";
@@ -108,7 +108,7 @@ public class Decoder {
     int imm11 = (instruction >> 20) & 0x1;
     int imm19_12 = (instruction >> 12) & 0xFF;
     int rd = (instruction >> 7) & 0x1F;
-    int imm = (imm20 << 20) | (imm19_12 << 12) | (imm11 << 11) | (imm10_1 << 1);
+    int imm = (imm20 << 19) | (imm19_12 << 11) | (imm11 << 10) | (imm10_1);
 
     return String.format("jal rd=%d, imm=%d", rd, imm);
   }
@@ -128,7 +128,7 @@ public class Decoder {
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
     int rd = (instruction >> 7) & 0x1F;
-
+    boolean aux = false;
     String operation = switch (funct3) {
       case 0b000 -> "addi";
       case 0b010 -> "slti";
@@ -138,17 +138,19 @@ public class Decoder {
       case 0b111 -> "andi";
       case 0b001 -> {
         imm &= 0x1F;
-        yield String.format("slli rd=%d, rs1=%d, shamt=%d", rd, rs1, imm);
+        aux = true;
+        yield "slli";
       }
       case 0b101 -> {
         String op = (imm & 0xFE0) == 0 ? "srli" : "srai";
         imm &= 0x1F;
-        yield String.format("%s rd=%d, rs1=%d, shamt=%d", op, rd, rs1, imm);
+        aux = true;
+        yield op;
       }
       default -> "unknown";
     };
+    return aux ?  String.format("%s rd=%d, rs1=%d, shamt=%d", operation, rd, rs1, imm) : String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
 
-    return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
   }
 
   // Decode the I Type instruction for Loads
@@ -188,7 +190,7 @@ public class Decoder {
       default -> "unknown";
     };
 
-    return (funct3 == 0b000) ? operation : String.format("%s rd=%d, csr=%d, rs1_or_zimm=%d", operation, rd, csr, rs1_or_zimm);
+    return (funct3 == 0b000) ? operation : String.format("%s rd=%d, csr=%d, rs1=%d", operation, rd, csr, rs1_or_zimm);
   }
 }
 
