@@ -1,20 +1,30 @@
 package br.faustech.cpu;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.function.BiFunction;
+import br.faustech.bus.Bus;
+import br.faustech.comum.ComponentType;
+import br.faustech.memory.Memory;
+import br.faustech.memory.MemoryException;
+import lombok.Getter;
+
 
 public class CPU {
 
     private static int programCounter;
-    private final int[] registers = new int[32]; // 32 general-purpose registers
-    private final int[] memory = new int[4096];  // Temporary memory until actual memory and bus are built
-    private final int[] csrRegisters = new int[4096]; // CSR registers
-
-    public CPU() {
+    @Getter
+    private static int[] registers = new int[32]; // 32 general-purpose registers
+    private static final int[] csrRegisters = new int[4096]; // CSR registers
+    private  static Memory memory;  // Assuming a Memory class with a constructor that takes the size
+    private static Bus bus;
+    public CPU(Memory memory, Bus bus) {
         programCounter = 0;
+        CPU.memory = memory;
+        CPU.bus = bus;
     }
 
-    public void executeInstruction(int instruction) {
+    public static void executeInstruction(int instruction) {
         String decodedInstruction = Decoder.decodeInstruction(instruction);
 
         // Parse the decoded instruction
@@ -117,33 +127,33 @@ public class CPU {
         }
     }
 
-    private void executeSType(String[] parts) {
+    private static void executeSType(String[] parts) {
         int rs1 = getRegisterIndex(parts, 1);
         int rs2 = getRegisterIndex(parts, 2);
         int imm = getImmediateValue(parts, 3);
 
         int address = registers[rs1] + imm;
-        if (address < 0 || address >= memory.length) {
+        if (address < 0 || address >= 4096) {
             System.out.println("Memory access out of bounds: " + address);
             return;
         }
 
         switch (parts[0]) {
             case "sb":
-                memory[address] = registers[rs2] & 0xFF;
+                bus.write(ComponentType.MEMORY, new byte[]{(byte) address, (byte) (registers[rs2] & 0xFF)});
                 break;
             case "sh":
-                memory[address] = registers[rs2] & 0xFFFF;
+                bus.write(ComponentType.MEMORY, new byte[]{(byte) address, (byte) (registers[rs2] & 0xFFFF)});
                 break;
             case "sw":
-                memory[address] = registers[rs2];
+                bus.write(ComponentType.MEMORY, new byte[]{(byte) address, (byte) registers[rs2]});
                 break;
         }
 
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " rs2=" + rs2 + " -> mem[" + address + "]=" + registers[rs2]);
     }
 
-    private void executeUType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
+    private static void executeUType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
         int rd = getRegisterIndex(parts, 1);
         int imm = getImmediateValue(parts, 2);
 
@@ -151,32 +161,20 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " imm=" + imm + " -> rd=" + rd);
     }
 
-    private void executeBType(String[] parts) {
+    private static void executeBType(String[] parts) {
         int rs1 = getRegisterIndex(parts, 1);
         int rs2 = getRegisterIndex(parts, 2);
         int imm = getImmediateValue(parts, 3);
 
-        boolean condition = false;
-        switch (parts[0]) {
-            case "beq":
-                condition = (registers[rs1] == registers[rs2]);
-                break;
-            case "bne":
-                condition = (registers[rs1] != registers[rs2]);
-                break;
-            case "blt":
-                condition = (registers[rs1] < registers[rs2]);
-                break;
-            case "bge":
-                condition = (registers[rs1] >= registers[rs2]);
-                break;
-            case "bltu":
-                condition = (Integer.compareUnsigned(registers[rs1], registers[rs2]) < 0);
-                break;
-            case "bgeu":
-                condition = (Integer.compareUnsigned(registers[rs1], registers[rs2]) >= 0);
-                break;
-        }
+        boolean condition = switch (parts[0]) {
+            case "beq" -> (registers[rs1] == registers[rs2]);
+            case "bne" -> (registers[rs1] != registers[rs2]);
+            case "blt" -> (registers[rs1] < registers[rs2]);
+            case "bge" -> (registers[rs1] >= registers[rs2]);
+            case "bltu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) < 0);
+            case "bgeu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) >= 0);
+            default -> false;
+        };
 
         if (condition) {
             programCounter += imm - 4; // Adjust for the default increment
@@ -185,7 +183,7 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " rs2=" + rs2 + " -> PC=" + programCounter);
     }
 
-    private void executeJType(String[] parts) {
+    private static void executeJType(String[] parts) {
         int rd = getRegisterIndex(parts, 1);
         int imm = getImmediateValue(parts, 2);
 
@@ -195,7 +193,7 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " imm=" + imm + " -> rd=" + rd + " PC=" + programCounter);
     }
 
-    private void executeITypeJumpAndLinkRegister(String[] parts) {
+    private static void executeITypeJumpAndLinkRegister(String[] parts) {
         int rd = getRegisterIndex(parts, 1);
         int rs1 = getRegisterIndex(parts, 2);
         int imm = getImmediateValue(parts, 3);
@@ -206,18 +204,20 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " imm=" + imm + " -> rd=" + rd + " PC=" + programCounter);
     }
 
-    private void executeITypeLoad(String[] parts) {
+    private static void executeITypeLoad(String[] parts) {
         int rd = getRegisterIndex(parts, 1);
         int rs1 = getRegisterIndex(parts, 2);
         int imm = getImmediateValue(parts, 3);
 
         int address = registers[rs1] + imm;
-        if (address < 0 || address >= memory.length) {
+        if (address < 0) {
             System.out.println("Memory access out of bounds: " + address);
             return;
         }
 
-        int value = memory[address];
+        byte[] data = bus.read(ComponentType.MEMORY, new byte[]{(byte) address, (byte) (address + 1)});
+        int value = data[0]; // Assuming read returns the data in the expected format
+
         switch (parts[0]) {
             case "lb":
                 registers[rd] = (byte) value;
@@ -239,7 +239,7 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " imm=" + imm + " -> rd=" + rd);
     }
 
-    private void executeITypeControlStatusRegister(String[] parts) {
+    private static void executeITypeControlStatusRegister(String[] parts) {
         int rd = getRegisterIndex(parts, 1);
         int rs1 = getRegisterIndex(parts, 2);
         int csr = getImmediateValue(parts, 3);
@@ -275,47 +275,29 @@ public class CPU {
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " csr=" + csr + " -> rd=" + rd);
     }
 
-    private void executeITypeImmediate(String[] parts) {
+    private static void executeITypeImmediate(String[] parts) {
         int rd = getRegisterIndex(parts, 1);
         int rs1 = getRegisterIndex(parts, 2);
         int imm = getImmediateValue(parts, 3);
 
-        int result = 0;
-        switch (parts[0]) {
-            case "addi":
-                result = registers[rs1] + imm;
-                break;
-            case "slti":
-                result = (registers[rs1] < imm) ? 1 : 0;
-                break;
-            case "sltiu":
-                result = (Integer.compareUnsigned(registers[rs1], imm) < 0) ? 1 : 0;
-                break;
-            case "xori":
-                result = registers[rs1] ^ imm;
-                break;
-            case "ori":
-                result = registers[rs1] | imm;
-                break;
-            case "andi":
-                result = registers[rs1] & imm;
-                break;
-            case "slli":
-                result = registers[rs1] << imm;
-                break;
-            case "srli":
-                result = registers[rs1] >>> imm;
-                break;
-            case "srai":
-                result = registers[rs1] >> imm;
-                break;
-        }
+        int result = switch (parts[0]) {
+            case "addi" -> registers[rs1] + imm;
+            case "slti" -> (registers[rs1] < imm) ? 1 : 0;
+            case "sltiu" -> (Integer.compareUnsigned(registers[rs1], imm) < 0) ? 1 : 0;
+            case "xori" -> registers[rs1] ^ imm;
+            case "ori" -> registers[rs1] | imm;
+            case "andi" -> registers[rs1] & imm;
+            case "slli" -> registers[rs1] << imm;
+            case "srli" -> registers[rs1] >>> imm;
+            case "srai" -> registers[rs1] >> imm;
+            default -> 0;
+        };
 
         registers[rd] = result;
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " imm=" + imm + " -> rd=" + rd);
     }
 
-    private void executeRType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
+    private static void executeRType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
         int rd = getRegisterIndex(parts, 1);
         int rs1 = getRegisterIndex(parts, 2);
         int rs2 = getRegisterIndex(parts, 3);
@@ -328,10 +310,9 @@ public class CPU {
         registers[rd] = operation.apply(value1, value2);
 
         System.out.println("Executing: " + parts[0] + " rs1=" + rs1 + " rs2=" + rs2 + " -> rd=" + rd);
-        System.out.println("Memory after execution: " + Arrays.toString(registers));
     }
 
-    private int getRegisterIndex(String[] parts, int partIndex) {
+    private static int getRegisterIndex(String[] parts, int partIndex) {
         try {
             return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
         } catch (Exception e) {
@@ -340,23 +321,12 @@ public class CPU {
         }
     }
 
-    private int getImmediateValue(String[] parts, int partIndex) {
+    private static int getImmediateValue(String[] parts, int partIndex) {
         try {
             return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
         } catch (Exception e) {
             System.out.println("Invalid immediate value in part: " + parts[partIndex]);
             return 0; // Default to immediate value 0 if there's an error
         }
-    }
-
-    public static void main(String[] args) {
-        CPU cpu = new CPU();
-
-        // Set register values before executing the instruction
-        cpu.registers[0] = 5;
-        cpu.registers[3] = 6;
-
-        int instruction = 0b00000000000000011001001010110011; // Example 'add' instruction
-        cpu.executeInstruction(instruction);
     }
 }
