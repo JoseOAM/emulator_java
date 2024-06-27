@@ -65,13 +65,9 @@ public class CPUTest {
       CPU cpu = new CPU(memory, bus);
       cpu.start();
 
-      while (true) {
-        if (cpu.isAlive()) {
-          continue;
-        } else {
-          Thread.sleep(1000);
-          cpu.interrupt();
-        }
+      while (cpu.isAlive()) {
+        Thread.sleep(1000);
+        cpu.interrupt();
       }
     } catch (MemoryException | InterruptedException e) {
       throw new RuntimeException(e);
