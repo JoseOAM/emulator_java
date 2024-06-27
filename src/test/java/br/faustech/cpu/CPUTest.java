@@ -68,13 +68,15 @@ public class CPUTest {
       while (true) {
         if (cpu.isAlive()) {
           continue;
-        }else {
-          break;
+        } else {
+          Thread.sleep(1000);
+          cpu.interrupt();
         }
       }
-    } catch (MemoryException e) {
+    } catch (MemoryException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
+
 }
 

@@ -98,10 +98,10 @@ public class CPU extends ComponentThread {
         executeRType(parts, (a, b) -> a & b);
         break;
       case "lui":
-        executeUType(parts, (imm, _) -> imm << 12);
+        executeUType(parts);
         break;
       case "auipc":
-        executeUType(parts, (imm, pc) -> (imm << 12) + pc);
+        executeUType(parts);
         break;
       case "jal":
         executeJType(parts);
@@ -185,8 +185,7 @@ public class CPU extends ComponentThread {
             address));
   }
 
-  private static void executeUType(String[] parts,
-      BiFunction<Integer, Integer, Integer> operation) {
+  private static void executeUType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
