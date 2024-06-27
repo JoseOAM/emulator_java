@@ -1,7 +1,6 @@
 package br.faustech.cpu;
 
-import java.util.Arrays;
-import java.util.HexFormat;
+import java.nio.ByteBuffer;
 import java.util.function.BiFunction;
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentType;
@@ -16,14 +15,23 @@ public class CPU {
     @Getter
     private static int[] registers = new int[32]; // 32 general-purpose registers
     private static final int[] csrRegisters = new int[4096]; // CSR registers
-    private  static Memory memory;  // Assuming a Memory class with a constructor that takes the size
+    private static Memory memory;  // Assuming a Memory class with a constructor that takes the size
     private static Bus bus;
     public CPU(Memory memory, Bus bus) {
         programCounter = 0;
         CPU.memory = memory;
         CPU.bus = bus;
     }
-
+    public static void getNextInstructionInMemory(){
+        try { // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
+            byte[] byteInstruction = memory.read(programCounter, programCounter + 4);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(byteInstruction);
+            int intInstruction = byteBuffer.getInt();
+            executeInstruction(intInstruction);
+        } catch (MemoryException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static void executeInstruction(int instruction) {
         String decodedInstruction = Decoder.decodeInstruction(instruction);
 
@@ -156,8 +164,17 @@ public class CPU {
     private static void executeUType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
         int rd = getRegisterIndex(parts, 1);
         int imm = getImmediateValue(parts, 2);
+        switch (parts[0]) {
+            case "lui":
+                registers[rd] = imm;
+                break;
+            case "auipc":
+                programCounter -= 4; // Adjust for the default increment
+                registers[rd] = imm + programCounter;
+                programCounter += 4;
+                break;
+        }
 
-        registers[rd] = operation.apply(imm, programCounter - 4);
         System.out.println("Executing: " + parts[0] + " imm=" + imm + " -> rd=" + rd);
     }
 
@@ -188,7 +205,7 @@ public class CPU {
         int imm = getImmediateValue(parts, 2);
 
         registers[rd] = programCounter;
-        programCounter += imm - 4; // Adjust for the default increment
+        programCounter += imm - 4; // -4 Adjust for the default increment
 
         System.out.println("Executing: " + parts[0] + " imm=" + imm + " -> rd=" + rd + " PC=" + programCounter);
     }
