@@ -6,13 +6,14 @@ import br.faustech.comum.ComponentType;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import lombok.extern.java.Log;
 
 @Log
 public class CPU extends ComponentThread {
-
+  @Getter
   private static int programCounter;
 
   @Getter private static final int[] registers = new int[32]; // 32 general-purpose registers
@@ -34,9 +35,11 @@ public class CPU extends ComponentThread {
 
   @Override
   public void run() {
+    programCounter = 0;
     // TODO: Implement the CPU execution loop
     while (true) {
       getNextInstructionInMemory();
+      System.out.println(getProgramCounter() + "------------" + Arrays.toString(getRegisters()));
     }
   }
 
@@ -59,9 +62,6 @@ public class CPU extends ComponentThread {
     // Parse the decoded instruction
     String[] parts = decodedInstruction.split(" ");
 
-    if (parts.length < 2) {
-      throw new RuntimeException(String.format("Invalid instruction: %s", decodedInstruction));
-    }
 
     String operation = parts[0];
     programCounter += 4; // Increment PC for next instruction, by default
@@ -142,6 +142,8 @@ public class CPU extends ComponentThread {
         break;
       case "ecall":
       case "ebreak":
+        executeEType(parts);
+        break;
       case "csrrw":
       case "csrrs":
       case "csrrc":
@@ -263,8 +265,11 @@ public class CPU extends ComponentThread {
       throw new MemoryException(String.format("Memory access out of bounds: %d", address));
     }
 
-    byte[] data = bus.read(ComponentType.MEMORY, new byte[]{(byte) address, (byte) (address + 1)});
-    int value = data[0]; // Assuming read returns the data in the expected format
+    byte[] data = memory.read(address,address+4);
+    int value = ((data[0] & 0xFF) << 24) |
+            ((data[1] & 0xFF) << 16) |
+            ((data[2] & 0xFF) << 8) |
+            (data[3] & 0xFF); // Assuming read returns the data in the expected format
 
     switch (parts[0]) {
       case "lb":
@@ -288,7 +293,16 @@ public class CPU extends ComponentThread {
         String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1,
             imm, rd, address, value));
   }
-
+  private static void executeEType(String[] parts){
+    switch (parts[0]) {
+      case "ecall":
+        handleEcall();
+        break;
+      case "ebreak":
+        handleEbreak();
+        break;
+    }
+  }
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -364,6 +378,18 @@ public class CPU extends ComponentThread {
     registers[rd] = operation.apply(value1, value2);
 
     log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
+  }
+  private static void handleEcall() {
+    //TODO
+    log.info("ECALL: Transferred control to exception handler for syscall");
+
+  }
+
+  private static void handleEbreak() {
+    //TODO
+    log.info("EBREAK: Transferred control to exception handler.");
+    log.info("Program has terminated via syscall exit.");
+    //System.exit(0); // Terminate the Java program
   }
 
   private static int getRegisterIndex(String[] parts, int partIndex) {
