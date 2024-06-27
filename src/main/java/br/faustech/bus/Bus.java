@@ -1,14 +1,17 @@
 package br.faustech.bus;
 
-import br.faustech.comum.Component;
+import static br.faustech.comum.ComponentType.FRAME_BUFFER;
+import static br.faustech.comum.ComponentType.MEMORY;
+
 import br.faustech.comum.ComponentType;
 import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
+import org.apache.commons.lang3.ArrayUtils;
 
 @Log
-public class Bus extends Component {
+public class Bus {
 
   private final FrameBuffer frameBuffer;
 
@@ -16,49 +19,51 @@ public class Bus extends Component {
 
   public Bus(final FrameBuffer frameBuffer, final Memory memory) {
 
-    super(ComponentType.BUS.toString().getBytes(), ComponentType.BUS);
     this.frameBuffer = frameBuffer;
     this.memory = memory;
   }
 
-  public void write(ComponentType componentType, final byte[] value) {
+  public void write(int address, final int[] value) {
+
+    ComponentType componentType = witchComponentType(address);
 
     try {
       switch (componentType) {
         case FRAME_BUFFER:
-          frameBuffer.writeToBackBuffer(value);
+          frameBuffer.writeToBackBufferFromInts(address, value);
           break;
         case MEMORY:
-          int beginDataPosition = value[0];
-          byte[] valueArray = new byte[value.length - 1];
-          System.arraycopy(value, 1, valueArray, 0, valueArray.length);
-          memory.write(valueArray, beginDataPosition);
+          memory.writeFromInt(address, value);
           break;
         default:
           throw new IllegalArgumentException("Invalid component type");
       }
-    } catch (MemoryException e) {
-      log.severe(e.getMessage());
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage());
     }
   }
 
-  public byte[] read(ComponentType componentType, final byte[] value) {
+  public int[] read(final int address, final int endDataPosition) {
 
+    ComponentType componentType = witchComponentType(address);
     try {
-
-      switch (componentType) {
-        case FRAME_BUFFER:
-          return frameBuffer.readFromFrontBuffer();
-        case MEMORY:
-          int beginDataPosition = value[0];
-          int endDataPosition = value[1];
-          return memory.read(beginDataPosition, endDataPosition);
-        default:
-          throw new IllegalArgumentException("Invalid component type");
-      }
+      return switch (componentType) {
+        case FRAME_BUFFER -> frameBuffer.readFromFrontBufferAsInts(address, endDataPosition);
+        case MEMORY -> memory.readAsInt(address, endDataPosition);
+      };
     } catch (MemoryException e) {
-      log.severe(e.getMessage());
-      return new byte[0];
+      throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  public ComponentType witchComponentType(int address) {
+
+    if (ArrayUtils.contains(frameBuffer.getAddresses(), address)) {
+      return FRAME_BUFFER;
+    } else if (ArrayUtils.contains(memory.getAddresses(), address)) {
+      return MEMORY;
+    } else {
+      throw new IllegalArgumentException("Invalid component type");
     }
   }
 

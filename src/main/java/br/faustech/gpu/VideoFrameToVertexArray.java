@@ -1,7 +1,5 @@
 package br.faustech.gpu;
 
-import br.faustech.bus.Bus;
-import br.faustech.comum.ComponentType;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +20,7 @@ public class VideoFrameToVertexArray extends Thread {
 
   private final int height;
 
-  private final Bus bus;
+  private final FrameBuffer frameBuffer;
 
   private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
       int targetHeight) {
@@ -59,21 +57,22 @@ public class VideoFrameToVertexArray extends Thread {
           vertexDataByte[i * 4 + 2] = (byte) ((intBits >> 16) & 0xFF);
           vertexDataByte[i * 4 + 3] = (byte) ((intBits >> 24) & 0xFF);
         }
-        bus.write(ComponentType.FRAME_BUFFER, vertexDataByte);
+
+        frameBuffer.writeToBackBuffer(0, vertexDataByte);
 
         time = System.currentTimeMillis() - time;
         long sleepTime = Math.max(0, 1000 / 60 - time);
         try {
           Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
-          log.severe(String.format("Error sleeping thread: %s", e.getMessage()));
+          log.severe(String.format(e.getMessage()));
           return;
         }
       }
       grabber.stop();
       this.processVideo();
     } catch (Exception e) {
-      log.severe(String.format("Error processing video: %s", e.getMessage()));
+      throw new RuntimeException(String.format("Error processing video: %s", e.getMessage()));
     }
   }
 

@@ -4,7 +4,7 @@ import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
 import static org.lwjgl.opengl.GL11.GL_PROJECTION;
 
 import br.faustech.comum.ComponentThread;
-import br.faustech.comum.ComponentType;
+import br.faustech.memory.MemoryException;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL46;
 
@@ -22,9 +22,10 @@ public class GPU extends ComponentThread {
 
   private Window window;
 
-  public GPU(int width, int height, FrameBuffer frameBuffer) {
+  public GPU(final int[] addresses, final int width, final int height,
+      final FrameBuffer frameBuffer) {
 
-    super(ComponentType.GPU.toString().getBytes(), ComponentType.GPU);
+    super(addresses);
     this.width = width;
     this.height = height;
     this.frameBuffer = frameBuffer;
@@ -36,7 +37,11 @@ public class GPU extends ComponentThread {
     init();
 
     while (isRunning()) {
-      render();
+      try {
+        render();
+      } catch (MemoryException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     cleanUp();
@@ -75,13 +80,13 @@ public class GPU extends ComponentThread {
     return !window.shouldClose();
   }
 
-  private void render() {
+  private void render() throws MemoryException {
 
     GL46.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
     shaderProgram.use();
-    float[] frame = frameBuffer.readFromFrontBufferAsFloats();
+    float[] frame = frameBuffer.readFromFrontBufferAsFloats(0, frameBuffer.getBufferSize() / 4);
 
     renderData.update(frame);
     renderData.draw();

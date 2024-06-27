@@ -2,10 +2,8 @@ package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
-import br.faustech.comum.ComponentType;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import lombok.Getter;
@@ -13,8 +11,8 @@ import lombok.extern.java.Log;
 
 @Log
 public class CPU extends ComponentThread {
-  @Getter
-  private static int programCounter;
+
+  @Getter private static int programCounter;
 
   @Getter private static final int[] registers = new int[32]; // 32 general-purpose registers
 
@@ -24,9 +22,9 @@ public class CPU extends ComponentThread {
 
   private static Bus bus;
 
-  public CPU(Memory memory, Bus bus) {
+  public CPU(final int[] addresses, final Memory memory, final Bus bus) {
 
-    super(ComponentType.CPU.toString().getBytes(), ComponentType.CPU);
+    super(addresses);
 
     programCounter = 0;
     CPU.memory = memory;
@@ -35,21 +33,20 @@ public class CPU extends ComponentThread {
 
   @Override
   public void run() {
+
     programCounter = 0;
     // TODO: Implement the CPU execution loop
     while (true) {
       getNextInstructionInMemory();
-      System.out.println(getProgramCounter() + "------------" + Arrays.toString(getRegisters()));
+      System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
   }
 
   public static void getNextInstructionInMemory() {
     // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
     try {
-      byte[] byteInstruction = memory.read(programCounter, programCounter + 4);
-      ByteBuffer byteBuffer = ByteBuffer.wrap(byteInstruction);
-      int intInstruction = byteBuffer.getInt();
-      executeInstruction(intInstruction);
+      int instruction = bus.read(programCounter, programCounter + 4)[0];
+      executeInstruction(instruction);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
@@ -61,7 +58,6 @@ public class CPU extends ComponentThread {
 
     // Parse the decoded instruction
     String[] parts = decodedInstruction.split(" ");
-
 
     String operation = parts[0];
     programCounter += 4; // Increment PC for next instruction, by default
@@ -97,10 +93,7 @@ public class CPU extends ComponentThread {
       case "and":
         executeRType(parts, (a, b) -> a & b);
         break;
-      case "lui":
-        executeUType(parts);
-        break;
-      case "auipc":
+      case "lui", "auipc":
         executeUType(parts);
         break;
       case "jal":
@@ -165,20 +158,19 @@ public class CPU extends ComponentThread {
     int imm = getImmediateValue(parts, 3);
 
     int address = registers[rs1] + imm;
-    if (address < 0 || address >= 4096) {
+    if (address < 0 || address >= memory.getMemorySize()) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
 
     switch (parts[0]) {
       case "sb":
-        bus.write(ComponentType.MEMORY, new byte[]{(byte) address, (byte) (registers[rs2] & 0xFF)});
+        bus.write(address, new int[]{registers[rs2] & 0xFF});
         break;
       case "sh":
-        bus.write(ComponentType.MEMORY,
-            new byte[]{(byte) address, (byte) (registers[rs2] & 0xFFFF)});
+        bus.write(address, new int[]{(registers[rs2] & 0xFFFF)});
         break;
       case "sw":
-        bus.write(ComponentType.MEMORY, new byte[]{(byte) address, (byte) registers[rs2]});
+        bus.write(address, new int[]{registers[rs2]});
         break;
     }
 
@@ -265,11 +257,7 @@ public class CPU extends ComponentThread {
       throw new MemoryException(String.format("Memory access out of bounds: %d", address));
     }
 
-    byte[] data = memory.read(address,address+4);
-    int value = ((data[0] & 0xFF) << 24) |
-            ((data[1] & 0xFF) << 16) |
-            ((data[2] & 0xFF) << 8) |
-            (data[3] & 0xFF); // Assuming read returns the data in the expected format
+    int value = bus.read(address, address + 4)[0];
 
     switch (parts[0]) {
       case "lb":
@@ -293,7 +281,9 @@ public class CPU extends ComponentThread {
         String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1,
             imm, rd, address, value));
   }
-  private static void executeEType(String[] parts){
+
+  private static void executeEType(String[] parts) {
+
     switch (parts[0]) {
       case "ecall":
         handleEcall();
@@ -303,6 +293,7 @@ public class CPU extends ComponentThread {
         break;
     }
   }
+
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -379,6 +370,7 @@ public class CPU extends ComponentThread {
 
     log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
   }
+
   private static void handleEcall() {
     //TODO
     log.info("ECALL: Transferred control to exception handler for syscall");
@@ -387,9 +379,7 @@ public class CPU extends ComponentThread {
 
   private static void handleEbreak() {
     //TODO
-    log.info("EBREAK: Transferred control to exception handler.");
-    log.info("Program has terminated via syscall exit.");
-    //System.exit(0); // Terminate the Java program
+    throw new RuntimeException("Program has terminated via syscall exit.");
   }
 
   private static int getRegisterIndex(String[] parts, int partIndex) {

@@ -1,10 +1,12 @@
 package br.faustech.gpu;
 
 import br.faustech.comum.Component;
-import br.faustech.comum.ComponentType;
+import br.faustech.memory.MemoryException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import lombok.Getter;
 
 public class FrameBuffer extends Component {
 
@@ -12,17 +14,14 @@ public class FrameBuffer extends Component {
 
   private byte[] backBuffer;
 
-  public FrameBuffer(final int bufferSize) {
+  @Getter private final int bufferSize;
 
-    super(ComponentType.FRAME_BUFFER.toString().getBytes(), ComponentType.FRAME_BUFFER);
-    this.frontBuffer = new byte[bufferSize * 4]; // 4 bytes per float
-    this.backBuffer = new byte[bufferSize * 4];
-  }
+  public FrameBuffer(final int[] addresses, final int bufferSize) {
 
-  public void writeToBackBuffer(byte[] data) {
-
-    System.arraycopy(data, 0, backBuffer, 0, data.length);
-    this.swap();
+    super(addresses);
+    this.frontBuffer = new byte[bufferSize]; // 4 bytes per float
+    this.backBuffer = new byte[bufferSize]; // 4 bytes per float
+    this.bufferSize = bufferSize;
   }
 
   public void swap() {
@@ -32,29 +31,110 @@ public class FrameBuffer extends Component {
     backBuffer = temp;
   }
 
-  public byte[] readFromFrontBuffer() {
+  public void writeToBackBuffer(final int beginDataPosition, final byte[] data)
+      throws MemoryException {
 
-    return frontBuffer.clone();
+    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length) {
+      throw new MemoryException("Invalid data positions or data length.");
+    }
+
+    System.arraycopy(data, 0, backBuffer, beginDataPosition, data.length);
+    this.swap();
   }
 
-  public float[] readFromFrontBufferAsFloats() {
+  public void writeToBackBufferFromFloats(final int beginDataPosition, final float[] data)
+      throws MemoryException {
 
-    ByteBuffer byteBuffer = ByteBuffer.wrap(frontBuffer);
-    byteBuffer.order(ByteOrder.nativeOrder()); // Ensure correct byte order
-    FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
-    float[] floatArray = new float[floatBuffer.capacity()];
-    floatBuffer.get(floatArray);
-    return floatArray;
-  }
-
-  public void writeToBackBufferFromFloats(float[] data) {
+    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length / 4) {
+      throw new MemoryException("Invalid data positions or data length.");
+    }
 
     ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
     byteBuffer.order(ByteOrder.nativeOrder());
     FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
     floatBuffer.put(data);
-    backBuffer = byteBuffer.array();
+
+    byteBuffer.rewind();
+    byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
+
     this.swap();
+  }
+
+  public void writeToBackBufferFromInts(final int beginDataPosition, final int[] data)
+      throws MemoryException {
+
+    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length / 4) {
+      throw new MemoryException("Invalid data positions or data length.");
+    }
+
+    ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
+    byteBuffer.order(ByteOrder.nativeOrder());
+    IntBuffer intBuffer = byteBuffer.asIntBuffer();
+    intBuffer.put(data);
+
+    byteBuffer.rewind();
+    byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
+
+    this.swap();
+  }
+
+  public byte[] readFromFrontBuffer(final int beginDataPosition, final int endDataPosition) {
+
+    if (beginDataPosition < 0 || endDataPosition > frontBuffer.length
+        || beginDataPosition >= endDataPosition) {
+      throw new IllegalArgumentException("Invalid data positions.");
+    }
+
+    int length = endDataPosition - beginDataPosition;
+    byte[] result = new byte[length];
+
+    System.arraycopy(frontBuffer, beginDataPosition, result, 0, length);
+
+    return result;
+  }
+
+  public float[] readFromFrontBufferAsFloats(final int beginDataPosition, final int endDataPosition)
+      throws MemoryException {
+
+    if (beginDataPosition < 0 || endDataPosition > frontBuffer.length / 4
+        || beginDataPosition >= endDataPosition) {
+      throw new MemoryException("Invalid data positions.");
+    }
+
+    int length = endDataPosition - beginDataPosition;
+
+    ByteBuffer byteBuffer = ByteBuffer.wrap(frontBuffer);
+    byteBuffer.order(ByteOrder.nativeOrder());
+
+    byteBuffer.position(beginDataPosition * 4);
+
+    FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
+    float[] floatArray = new float[length];
+    floatBuffer.get(floatArray, 0, length);
+
+    return floatArray;
+  }
+
+  public int[] readFromFrontBufferAsInts(final int beginDataPosition, final int endDataPosition)
+      throws MemoryException {
+
+    if (beginDataPosition < 0 || endDataPosition > frontBuffer.length / 4
+        || beginDataPosition >= endDataPosition) {
+      throw new MemoryException("Invalid data positions.");
+    }
+
+    int length = endDataPosition - beginDataPosition;
+
+    ByteBuffer byteBuffer = ByteBuffer.wrap(frontBuffer);
+    byteBuffer.order(ByteOrder.nativeOrder());
+
+    byteBuffer.position(beginDataPosition * 4);
+
+    IntBuffer intBuffer = byteBuffer.asIntBuffer();
+    int[] intArray = new int[length];
+    intBuffer.get(intArray, 0, length);
+
+    return intArray;
   }
 
 }

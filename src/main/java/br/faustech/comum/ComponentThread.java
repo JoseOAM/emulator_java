@@ -7,8 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public abstract class ComponentThread extends Thread {
 
-  private final byte[] address;
-
-  private final ComponentType type;
-
+  private final int[] addresses;
 }

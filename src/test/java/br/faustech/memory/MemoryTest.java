@@ -11,7 +11,13 @@ public class MemoryTest {
   @Test
   public void writeAndReadMemoryTest() throws MemoryException {
 
-    Memory memory = new Memory(1024);
+    int memorySize = 1024;
+    int[] addresses = new int[memorySize];
+    for (int i = 0; i < memorySize; i++) {
+      addresses[i] = i;
+    }
+
+    Memory memory = new Memory(addresses, memorySize);
 
     final byte[] data = new byte[30];
     for (int i = 0; i < data.length; i++) {
@@ -54,21 +60,21 @@ public class MemoryTest {
     data3[13] = data[28];
     data3[14] = data[29];
 
-    memory.write(data1, 0);
+    memory.write(0, data1);
     assertEquals(Arrays.toString(data1), Arrays.toString(memory.read(0, 5)));
 
-    memory.write(data2, 10);
+    memory.write(10, data2);
     assertEquals(Arrays.toString(data2), Arrays.toString(memory.read(10, 20)));
 
-    memory.write(data3, 50);
+    memory.write(50, data3);
     assertEquals(Arrays.toString(data3), Arrays.toString(memory.read(50, 65)));
 
-    memory.write(data3, 0);
+    memory.write(0, data3);
     assertEquals(Arrays.toString(data3), Arrays.toString(memory.read(0, 15)));
 
     assertThrows(MemoryException.class, () -> memory.read(0, 1025));
 
-    assertThrows(MemoryException.class, () -> memory.write(data3, 1010));
+    assertThrows(MemoryException.class, () -> memory.write(1010, data3));
 
     assertThrows(MemoryException.class, () -> memory.read(-1, 10));
 
