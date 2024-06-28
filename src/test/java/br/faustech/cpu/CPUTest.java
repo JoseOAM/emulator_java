@@ -102,6 +102,9 @@ public class CPUTest {
         cpu.interrupt();
       }
 
+      System.out.println(
+              STR."Memory after execution: \{Arrays.toString(memory.read(0, position))}");
+
     } catch (MemoryException | InterruptedException e) {
       throw new RuntimeException(e);
     }

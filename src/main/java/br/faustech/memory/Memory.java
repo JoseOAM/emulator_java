@@ -54,7 +54,7 @@ public class Memory extends Component {
 
     if (beginDataPosition + length <= this.memory.length) {
       byteBuffer.get(bytes);
-      System.arraycopy(bytes, 0, this.memory, beginDataPosition, length);
+      System.arraycopy(bytes, 0, this.memory, (beginDataPosition), length);
     } else {
       throw new MemoryException(
           String.format("Memory overflow at position %d", beginDataPosition + length - 1));

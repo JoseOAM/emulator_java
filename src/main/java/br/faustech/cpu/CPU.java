@@ -157,7 +157,7 @@ public class CPU extends ComponentThread {
     int rs2 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
 
-    int address = registers[rs1] + imm;
+    int address = (registers[rs1] + imm)*4;
     if (address < 0 || address >= memory.getMemorySize()) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
@@ -293,7 +293,6 @@ public class CPU extends ComponentThread {
         break;
     }
   }
-
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
