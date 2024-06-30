@@ -18,16 +18,13 @@ public class CPU extends ComponentThread {
 
   @Getter private static int programCounter;
 
-  private static Memory memory;  // Assuming a Memory class with a constructor that takes the size
-
   private static Bus bus;
 
-  public CPU(final int[] addresses, final Memory memory, final Bus bus) {
+  public CPU(final int[] addresses, final Bus bus) {
 
     super(addresses);
 
     programCounter = 0;
-    CPU.memory = memory;
     CPU.bus = bus;
   }
 
@@ -278,7 +275,7 @@ public class CPU extends ComponentThread {
     int imm = getImmediateValue(parts, 3);
 
     int address = (registers[rs1] + imm) * 4;
-    if (address < 0 || address >= memory.getMemorySize()) {
+    if (address < 0 || address >= Memory.getMemorySize()) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
 

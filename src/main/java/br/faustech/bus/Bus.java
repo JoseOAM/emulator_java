@@ -47,7 +47,7 @@ public class Bus {
       switch (componentType) {
         case FRAME_BUFFER:
           // Write to frame buffer if the address corresponds to it
-          frameBuffer.writeToBackBufferFromInts(address - memory.getMemorySize(), value);
+          frameBuffer.writeToBackBufferFromInts(address - Memory.getMemorySize(), value);
           break;
         case MEMORY:
           // Write to memory if the address corresponds to it
@@ -94,7 +94,7 @@ public class Bus {
     try {
       return switch (componentType) {
         case FRAME_BUFFER -> frameBuffer.readFromFrontBufferAsInts(
-            address - memory.getMemorySize(), endDataPosition - memory.getMemorySize());
+            address - Memory.getMemorySize(), endDataPosition - Memory.getMemorySize());
         case MEMORY -> memory.readAsInt(address, endDataPosition);
       };
     } catch (MemoryException e) {

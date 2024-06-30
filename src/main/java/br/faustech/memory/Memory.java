@@ -9,11 +9,11 @@ import lombok.Getter;
  */
 public class Memory extends Component {
 
+  @Getter private static int memorySize; // Total size of the memory array
+
   private final byte[] memory; // Memory array to store data
 
   private final boolean writable; // Flag to indicate if the memory is writable
-
-  @Getter private final int memorySize; // Total size of the memory array
 
   /**
    * Constructs a memory component with specified size.
@@ -25,7 +25,7 @@ public class Memory extends Component {
 
     super(addresses);
     this.memory = new byte[memorySize]; // Allocate memory
-    this.memorySize = memorySize;
+    Memory.memorySize = memorySize;
     this.writable = true; // Set the memory as writable
   }
 

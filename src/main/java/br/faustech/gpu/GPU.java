@@ -70,7 +70,7 @@ public class GPU extends ComponentThread {
 
     window = new Window(width, height, "Emulator");
     window.init();
-    window.setResizeCallback((_, newWidth, newHeight) -> {
+    window.setResizeCallback((ignore, newWidth, newHeight) -> {
       width = newWidth;
       height = newHeight;
       GL46.glViewport(0, 0, newWidth, newHeight);

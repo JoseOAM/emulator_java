@@ -5,7 +5,7 @@ import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import java.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CPUTest {
 
@@ -91,10 +91,9 @@ public class CPUTest {
         position += 4;
       }
 
-      System.out.println(
-          STR."Memory before execution: \{Arrays.toString(memory.read(0, position))}");
+      System.out.printf("Memory before execution: %s%n", Arrays.toString(memory.read(0, position)));
 
-      CPU cpu = new CPU(new int[1], memory, bus);
+      CPU cpu = new CPU(new int[1], bus);
       cpu.start();
 
       while (cpu.isAlive()) {
@@ -102,8 +101,7 @@ public class CPUTest {
         cpu.interrupt();
       }
 
-      System.out.println(
-          STR."Memory after execution: \{Arrays.toString(memory.read(0, position))}");
+      System.out.printf("Memory after execution: %s%n%n", Arrays.toString(memory.read(0, position)));
 
     } catch (MemoryException | InterruptedException e) {
       throw new RuntimeException(e);

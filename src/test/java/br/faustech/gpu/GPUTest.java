@@ -1,7 +1,7 @@
 package br.faustech.gpu;
 
 import java.lang.Thread.State;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
 public class GPUTest {
