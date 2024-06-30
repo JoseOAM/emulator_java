@@ -12,11 +12,11 @@ import lombok.extern.java.Log;
 @Log
 public class CPU extends ComponentThread {
 
-  @Getter private static int programCounter;
-
   @Getter private static final int[] registers = new int[32]; // 32 general-purpose registers
 
   private static final int[] csrRegisters = new int[4096]; // CSR registers
+
+  @Getter private static int programCounter;
 
   private static Memory memory;  // Assuming a Memory class with a constructor that takes the size
 
@@ -151,32 +151,21 @@ public class CPU extends ComponentThread {
     }
   }
 
-  private static void executeSType(String[] parts) {
+  private static void executeRType(String[] parts,
+      BiFunction<Integer, Integer, Integer> operation) {
 
-    int rs1 = getRegisterIndex(parts, 1);
-    int rs2 = getRegisterIndex(parts, 2);
-    int imm = getImmediateValue(parts, 3);
+    int rd = getRegisterIndex(parts, 1);
+    int rs1 = getRegisterIndex(parts, 2);
+    int rs2 = getRegisterIndex(parts, 3);
 
-    int address = (registers[rs1] + imm)*4;
-    if (address < 0 || address >= memory.getMemorySize()) {
-      throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
-    }
+    // Access the values in registers rs1 and rs2
+    int value1 = registers[rs1];
+    int value2 = registers[rs2];
 
-    switch (parts[0]) {
-      case "sb":
-        bus.write(address, new int[]{registers[rs2] & 0xFF});
-        break;
-      case "sh":
-        bus.write(address, new int[]{(registers[rs2] & 0xFFFF)});
-        break;
-      case "sw":
-        bus.write(address, new int[]{registers[rs2]});
-        break;
-    }
+    // Perform the operation and store the result in register rd
+    registers[rd] = operation.apply(value1, value2);
 
-    log.info(
-        String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d", parts[0], rs1, rs2, imm,
-            address));
+    log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
   }
 
   private static void executeUType(String[] parts) {
@@ -195,30 +184,6 @@ public class CPU extends ComponentThread {
     }
 
     log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
-  }
-
-  private static void executeBType(String[] parts) {
-
-    int rs1 = getRegisterIndex(parts, 1);
-    int rs2 = getRegisterIndex(parts, 2);
-    int imm = getImmediateValue(parts, 3);
-
-    boolean condition = switch (parts[0]) {
-      case "beq" -> (registers[rs1] == registers[rs2]);
-      case "bne" -> (registers[rs1] != registers[rs2]);
-      case "blt" -> (registers[rs1] < registers[rs2]);
-      case "bge" -> (registers[rs1] >= registers[rs2]);
-      case "bltu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) < 0);
-      case "bgeu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) >= 0);
-      default -> false;
-    };
-
-    if (condition) {
-      programCounter += imm - 4; // Adjust for the default increment
-    }
-
-    log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm,
-        programCounter));
   }
 
   private static void executeJType(String[] parts) {
@@ -282,6 +247,81 @@ public class CPU extends ComponentThread {
             imm, rd, address, value));
   }
 
+  private static void executeBType(String[] parts) {
+
+    int rs1 = getRegisterIndex(parts, 1);
+    int rs2 = getRegisterIndex(parts, 2);
+    int imm = getImmediateValue(parts, 3);
+
+    boolean condition = switch (parts[0]) {
+      case "beq" -> (registers[rs1] == registers[rs2]);
+      case "bne" -> (registers[rs1] != registers[rs2]);
+      case "blt" -> (registers[rs1] < registers[rs2]);
+      case "bge" -> (registers[rs1] >= registers[rs2]);
+      case "bltu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) < 0);
+      case "bgeu" -> (Integer.compareUnsigned(registers[rs1], registers[rs2]) >= 0);
+      default -> false;
+    };
+
+    if (condition) {
+      programCounter += imm - 4; // Adjust for the default increment
+    }
+
+    log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm,
+        programCounter));
+  }
+
+  private static void executeSType(String[] parts) {
+
+    int rs1 = getRegisterIndex(parts, 1);
+    int rs2 = getRegisterIndex(parts, 2);
+    int imm = getImmediateValue(parts, 3);
+
+    int address = (registers[rs1] + imm) * 4;
+    if (address < 0 || address >= memory.getMemorySize()) {
+      throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
+    }
+
+    switch (parts[0]) {
+      case "sb":
+        bus.write(address, new int[]{registers[rs2] & 0xFF});
+        break;
+      case "sh":
+        bus.write(address, new int[]{(registers[rs2] & 0xFFFF)});
+        break;
+      case "sw":
+        bus.write(address, new int[]{registers[rs2]});
+        break;
+    }
+
+    log.info(
+        String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d", parts[0], rs1, rs2, imm,
+            address));
+  }
+
+  private static void executeITypeImmediate(String[] parts) {
+
+    int rd = getRegisterIndex(parts, 1);
+    int rs1 = getRegisterIndex(parts, 2);
+    int imm = getImmediateValue(parts, 3);
+
+    int result = switch (parts[0]) {
+      case "addi" -> registers[rs1] + imm;
+      case "slti" -> (registers[rs1] < imm) ? 1 : 0;
+      case "sltiu" -> (Integer.compareUnsigned(registers[rs1], imm) < 0) ? 1 : 0;
+      case "xori" -> registers[rs1] ^ imm;
+      case "ori" -> registers[rs1] | imm;
+      case "andi" -> registers[rs1] & imm;
+      case "slli" -> registers[rs1] << imm;
+      case "srli" -> registers[rs1] >>> imm;
+      case "srai" -> registers[rs1] >> imm;
+      default -> 0;
+    };
+
+    registers[rd] = result;
+    log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
+  }
+
   private static void executeEType(String[] parts) {
 
     switch (parts[0]) {
@@ -293,6 +333,7 @@ public class CPU extends ComponentThread {
         break;
     }
   }
+
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -330,57 +371,6 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
   }
 
-  private static void executeITypeImmediate(String[] parts) {
-
-    int rd = getRegisterIndex(parts, 1);
-    int rs1 = getRegisterIndex(parts, 2);
-    int imm = getImmediateValue(parts, 3);
-
-    int result = switch (parts[0]) {
-      case "addi" -> registers[rs1] + imm;
-      case "slti" -> (registers[rs1] < imm) ? 1 : 0;
-      case "sltiu" -> (Integer.compareUnsigned(registers[rs1], imm) < 0) ? 1 : 0;
-      case "xori" -> registers[rs1] ^ imm;
-      case "ori" -> registers[rs1] | imm;
-      case "andi" -> registers[rs1] & imm;
-      case "slli" -> registers[rs1] << imm;
-      case "srli" -> registers[rs1] >>> imm;
-      case "srai" -> registers[rs1] >> imm;
-      default -> 0;
-    };
-
-    registers[rd] = result;
-    log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
-  }
-
-  private static void executeRType(String[] parts,
-      BiFunction<Integer, Integer, Integer> operation) {
-
-    int rd = getRegisterIndex(parts, 1);
-    int rs1 = getRegisterIndex(parts, 2);
-    int rs2 = getRegisterIndex(parts, 3);
-
-    // Access the values in registers rs1 and rs2
-    int value1 = registers[rs1];
-    int value2 = registers[rs2];
-
-    // Perform the operation and store the result in register rd
-    registers[rd] = operation.apply(value1, value2);
-
-    log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
-  }
-
-  private static void handleEcall() {
-    //TODO
-    log.info("ECALL: Transferred control to exception handler for syscall");
-
-  }
-
-  private static void handleEbreak() {
-    //TODO
-    throw new RuntimeException("Program has terminated via syscall exit.");
-  }
-
   private static int getRegisterIndex(String[] parts, int partIndex) {
 
     try {
@@ -399,6 +389,17 @@ public class CPU extends ComponentThread {
       throw new RuntimeException(
           String.format("Invalid immediate value in part: %s", parts[partIndex]));
     }
+  }
+
+  private static void handleEcall() {
+    //TODO
+    log.info("ECALL: Transferred control to exception handler for syscall");
+
+  }
+
+  private static void handleEbreak() {
+    //TODO
+    throw new RuntimeException("Program has terminated via syscall exit.");
   }
 
 }

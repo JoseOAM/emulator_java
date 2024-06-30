@@ -8,22 +8,34 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import lombok.Getter;
 
+/**
+ * A class representing a framebuffer that manages two buffers for double buffering.
+ */
 public class FrameBuffer extends Component {
 
-  private byte[] frontBuffer;
+  @Getter private final int bufferSize; // Size of each buffer
 
-  private byte[] backBuffer;
+  private byte[] frontBuffer; // Buffer currently displayed
 
-  @Getter private final int bufferSize;
+  private byte[] backBuffer; // Buffer to write new data to
 
+  /**
+   * Constructs a FrameBuffer with specified memory addresses and buffer size.
+   *
+   * @param addresses  The memory addresses.
+   * @param bufferSize The size of each buffer.
+   */
   public FrameBuffer(final int[] addresses, final int bufferSize) {
 
     super(addresses);
-    this.frontBuffer = new byte[bufferSize]; // 4 bytes per float
-    this.backBuffer = new byte[bufferSize]; // 4 bytes per float
+    this.frontBuffer = new byte[bufferSize]; // Initialize front buffer
+    this.backBuffer = new byte[bufferSize]; // Initialize back buffer
     this.bufferSize = bufferSize;
   }
 
+  /**
+   * Swaps the front and back buffers, promoting the back to front for display.
+   */
   public void swap() {
 
     byte[] temp = frontBuffer;
@@ -31,6 +43,13 @@ public class FrameBuffer extends Component {
     backBuffer = temp;
   }
 
+  /**
+   * Writes data to the back buffer starting from a specified position.
+   *
+   * @param beginDataPosition The starting position in the back buffer.
+   * @param data              The byte data to be written.
+   * @throws MemoryException If the write operation exceeds buffer limits.
+   */
   public void writeToBackBuffer(final int beginDataPosition, final byte[] data)
       throws MemoryException {
 
@@ -39,9 +58,15 @@ public class FrameBuffer extends Component {
     }
 
     System.arraycopy(data, 0, backBuffer, beginDataPosition, data.length);
-    this.swap();
   }
 
+  /**
+   * Writes float data to the back buffer, converting them to bytes before storing.
+   *
+   * @param beginDataPosition The starting index where data is to be written.
+   * @param data              The float data to be converted and written.
+   * @throws MemoryException If the write operation exceeds buffer limits.
+   */
   public void writeToBackBufferFromFloats(final int beginDataPosition, final float[] data)
       throws MemoryException {
 
@@ -49,17 +74,21 @@ public class FrameBuffer extends Component {
       throw new MemoryException("Invalid data positions or data length.");
     }
 
-    ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
-    byteBuffer.order(ByteOrder.nativeOrder());
+    ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.nativeOrder());
     FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
     floatBuffer.put(data);
 
     byteBuffer.rewind();
     byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
-
-    this.swap();
   }
 
+  /**
+   * Writes integer data to the back buffer, converting them to bytes before storing.
+   *
+   * @param beginDataPosition The starting index where data is to be written.
+   * @param data              The integer data to be converted and written.
+   * @throws MemoryException If the write operation exceeds buffer limits.
+   */
   public void writeToBackBufferFromInts(final int beginDataPosition, final int[] data)
       throws MemoryException {
 
@@ -67,17 +96,21 @@ public class FrameBuffer extends Component {
       throw new MemoryException("Invalid data positions or data length.");
     }
 
-    ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
-    byteBuffer.order(ByteOrder.nativeOrder());
+    ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.nativeOrder());
     IntBuffer intBuffer = byteBuffer.asIntBuffer();
     intBuffer.put(data);
 
     byteBuffer.rewind();
     byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
-
-    this.swap();
   }
 
+  /**
+   * Reads a segment of the front buffer as byte data.
+   *
+   * @param beginDataPosition The starting index in the buffer.
+   * @param endDataPosition   The ending index in the buffer.
+   * @return An array of bytes read from the buffer.
+   */
   public byte[] readFromFrontBuffer(final int beginDataPosition, final int endDataPosition) {
 
     if (beginDataPosition < 0 || endDataPosition > frontBuffer.length
@@ -93,6 +126,14 @@ public class FrameBuffer extends Component {
     return result;
   }
 
+  /**
+   * Reads a segment of the front buffer as float data.
+   *
+   * @param beginDataPosition The starting index in the buffer.
+   * @param endDataPosition   The ending index in the buffer.
+   * @return An array of floats read from the buffer.
+   * @throws MemoryException If invalid data positions are used.
+   */
   public float[] readFromFrontBufferAsFloats(final int beginDataPosition, final int endDataPosition)
       throws MemoryException {
 
@@ -105,7 +146,6 @@ public class FrameBuffer extends Component {
 
     ByteBuffer byteBuffer = ByteBuffer.wrap(frontBuffer);
     byteBuffer.order(ByteOrder.nativeOrder());
-
     byteBuffer.position(beginDataPosition * 4);
 
     FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
@@ -115,6 +155,14 @@ public class FrameBuffer extends Component {
     return floatArray;
   }
 
+  /**
+   * Reads a segment of the front buffer as integer data.
+   *
+   * @param beginDataPosition The starting index in the buffer.
+   * @param endDataPosition   The ending index in the buffer.
+   * @return An array of integers read from the buffer.
+   * @throws MemoryException If invalid data positions are used.
+   */
   public int[] readFromFrontBufferAsInts(final int beginDataPosition, final int endDataPosition)
       throws MemoryException {
 
@@ -127,7 +175,6 @@ public class FrameBuffer extends Component {
 
     ByteBuffer byteBuffer = ByteBuffer.wrap(frontBuffer);
     byteBuffer.order(ByteOrder.nativeOrder());
-
     byteBuffer.position(beginDataPosition * 4);
 
     IntBuffer intBuffer = byteBuffer.asIntBuffer();

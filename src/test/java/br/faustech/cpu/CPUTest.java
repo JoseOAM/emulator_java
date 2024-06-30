@@ -77,7 +77,7 @@ public class CPUTest {
         if (i < memorySize) {
           memoryAddresses[i] = i;
         } else {
-          frameBufferAddresses[i - frameBufferSize] = i;
+          frameBufferAddresses[i - memorySize] = i;
         }
       }
       final Memory memory = new Memory(memoryAddresses, memorySize);
@@ -103,7 +103,7 @@ public class CPUTest {
       }
 
       System.out.println(
-              STR."Memory after execution: \{Arrays.toString(memory.read(0, position))}");
+          STR."Memory after execution: \{Arrays.toString(memory.read(0, position))}");
 
     } catch (MemoryException | InterruptedException e) {
       throw new RuntimeException(e);
