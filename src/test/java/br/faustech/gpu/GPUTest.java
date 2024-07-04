@@ -11,8 +11,8 @@ public class GPUTest {
   @Test
   public void gpuTest() {
 
-    int WIDTH = 800;
-    int HEIGHT = 600;
+    int WIDTH = 512;
+    int HEIGHT = 512;
     int frameBufferSize = WIDTH * HEIGHT * 8 * 4;
 
     int[] frameBufferAddresses = new int[frameBufferSize];

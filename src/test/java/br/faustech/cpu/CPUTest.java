@@ -107,7 +107,5 @@ public class CPUTest {
       throw new RuntimeException(e);
     }
   }
-
-
 }
 

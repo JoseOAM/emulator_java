@@ -2,9 +2,9 @@ package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
+import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import lombok.extern.java.Log;
@@ -35,7 +35,6 @@ public class CPU extends ComponentThread {
     // TODO: Implement the CPU execution loop
     while (true) {
       getNextInstructionInMemory();
-      System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
   }
 
@@ -274,8 +273,8 @@ public class CPU extends ComponentThread {
     int rs2 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
 
-    int address = (registers[rs1] + imm) * 4;
-    if (address < 0 || address >= Memory.getMemorySize()) {
+    int address = (registers[rs1] + imm);
+    if (address < 0 || address >= Memory.getMemorySize() + FrameBuffer.getBufferSize()) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
 

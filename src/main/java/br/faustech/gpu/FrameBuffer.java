@@ -13,7 +13,7 @@ import lombok.Getter;
  */
 public class FrameBuffer extends Component {
 
-  @Getter private final int bufferSize; // Size of each buffer
+  @Getter private static int bufferSize; // Size of each buffer
 
   private byte[] frontBuffer; // Buffer currently displayed
 
@@ -30,7 +30,7 @@ public class FrameBuffer extends Component {
     super(addresses);
     this.frontBuffer = new byte[bufferSize]; // Initialize front buffer
     this.backBuffer = new byte[bufferSize]; // Initialize back buffer
-    this.bufferSize = bufferSize;
+    FrameBuffer.bufferSize = bufferSize;
   }
 
   /**

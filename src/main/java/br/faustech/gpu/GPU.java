@@ -1,8 +1,5 @@
 package br.faustech.gpu;
 
-import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
-import static org.lwjgl.opengl.GL11.GL_PROJECTION;
-
 import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
 import org.lwjgl.glfw.GLFW;
@@ -73,12 +70,7 @@ public class GPU extends ComponentThread {
     window.setResizeCallback((ignore, newWidth, newHeight) -> {
       width = newWidth;
       height = newHeight;
-      GL46.glViewport(0, 0, newWidth, newHeight);
-      GL46.glMatrixMode(GL_PROJECTION);
-      GL46.glLoadIdentity();
-      GL46.glOrtho(0, newWidth, newHeight, 0, -1, 1);
-      GL46.glMatrixMode(GL_MODELVIEW);
-      GL46.glLoadIdentity();
+      GL46.glViewport(0, 0, width, height);
     });
 
     shaderProgram = new ShaderProgram();
@@ -111,8 +103,7 @@ public class GPU extends ComponentThread {
     GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
     shaderProgram.use();
-    float[] frame = frameBuffer.readFromFrontBufferAsFloats(0, frameBuffer.getBufferSize() / 4);
-
+    float[] frame = frameBuffer.readFromFrontBufferAsFloats(0, FrameBuffer.getBufferSize() / 4);
     renderData.update(frame);
     renderData.draw();
 

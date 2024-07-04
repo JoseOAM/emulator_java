@@ -8,10 +8,16 @@ import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 public class Main {
 
   private static ProgramUtils programUtils;
+
+  private static Bus bus;
+
+  private static FrameBuffer frameBuffer;
+
 
   private static GPU gpu;
 
@@ -19,30 +25,36 @@ public class Main {
 
   public static void main(String[] args) throws FileNotFoundException {
 
-    if (args.length < 1) {
-      throw new IllegalArgumentException("Program file name not provided.");
+//    if (args.length < 1) {
+//      throw new IllegalArgumentException("Program file name not provided.");
+//    }
+
+    String filename = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.bin";
+
+    // Check if the file extension is .bin
+    if (!filename.toLowerCase().endsWith(".bin")) {
+      throw new IllegalArgumentException("Invalid file type. The file must be a .bin file.");
     }
 
-    setup();
-
-    String filename = args[0];
     File file = new File(filename);
 
     if (!file.exists()) {
       throw new FileNotFoundException(String.format("File %s not found.", filename));
     }
 
-    String program = programUtils.readFile(filename);
+    setup();
+
+    String program = programUtils.readFile(file);
     programUtils.writeProgramInMemory(program);
 
     gpu.start();
     cpu.start();
 
-    while (gpu.isAlive() || cpu.isAlive()) {
+    while (gpu.isAlive()) {
       if (gpu.getState() == Thread.State.TERMINATED) {
+        frameBuffer.swap();
+        System.out.println(Arrays.toString(bus.read(4096, 4130)));
         gpu.interrupt();
-      }
-      if (cpu.getState() == Thread.State.TERMINATED) {
         cpu.interrupt();
       }
     }
@@ -65,9 +77,9 @@ public class Main {
       }
     }
 
-    FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
+    frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
     Memory memory = new Memory(memoryAddresses, memorySize);
-    Bus bus = new Bus(frameBuffer, memory);
+    bus = new Bus(frameBuffer, memory);
     programUtils = new ProgramUtils(bus);
     gpu = new GPU(new int[1], WIDTH, HEIGHT, frameBuffer);
     cpu = new CPU(new int[1], bus);

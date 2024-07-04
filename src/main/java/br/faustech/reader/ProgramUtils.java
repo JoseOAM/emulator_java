@@ -17,19 +17,12 @@ public class ProgramUtils {
   /**
    * Reads the contents of a file if it has a .bin extension.
    *
-   * @param filename The name of the file to read.
+   * @param file The file to read.
    * @return The content of the file as a String.
    * @throws FileNotFoundException    If the file is not found.
    * @throws IllegalArgumentException If the file does not have a .bin extension.
    */
-  public String readFile(String filename) throws FileNotFoundException {
-
-    File file = new File(filename);
-
-    // Check if the file extension is .bin
-    if (!filename.toLowerCase().endsWith(".bin")) {
-      throw new IllegalArgumentException("Invalid file type. The file must be a .bin file.");
-    }
+  public String readFile(File file) throws FileNotFoundException {
 
     StringBuilder content = new StringBuilder();
 

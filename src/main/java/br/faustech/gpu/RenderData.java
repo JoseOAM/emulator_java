@@ -2,11 +2,13 @@ package br.faustech.gpu;
 
 import java.nio.FloatBuffer;
 import java.util.Objects;
+import lombok.extern.java.Log;
 import org.lwjgl.opengl.GL46;
 
 /**
  * Handles the setup, updating, and drawing of render data for OpenGL.
  */
+@Log
 public class RenderData {
 
   private final int width, height; // Dimensions for the texture
@@ -21,6 +23,8 @@ public class RenderData {
 
   private int nextPboIndex = 0; // Index to track the next PBO to use for rendering
 
+  private ShaderProgram shaderProgram; // Shader program for rendering
+
   /**
    * Constructor for RenderData specifying dimensions for the rendering texture.
    *
@@ -34,11 +38,16 @@ public class RenderData {
   }
 
   /**
-   * Initializes OpenGL objects including textures, buffers, and array objects.
+   * Initializes OpenGL objects including textures, buffers, array objects, and shaders.
    */
   public void setup() {
-    // Activate texture unit 0
-    GL46.glActiveTexture(GL46.GL_TEXTURE0);
+
+    GL46.glEnable(GL46.GL_TEXTURE_2D);
+    GL46.glPixelStorei(GL46.GL_UNPACK_ALIGNMENT, 1);
+
+    // Initialize the shader program
+    shaderProgram = new ShaderProgram();
+    shaderProgram.loadShaders();
 
     // Setup and bind the Vertex Array Object (VAO)
     vao = GL46.glGenVertexArrays();
@@ -47,7 +56,7 @@ public class RenderData {
     // Create and bind the Vertex Buffer Object (VBO)
     vbo = GL46.glGenBuffers();
     GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, 0, GL46.GL_DYNAMIC_DRAW); // Allocate an empty buffer
+    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, 0, GL46.GL_STREAM_DRAW); // Allocate an empty buffer
 
     // Configure vertex attributes for position, color, and texture coordinates
     int stride = 8 * Float.BYTES;
@@ -65,11 +74,22 @@ public class RenderData {
     // Create and configure the texture
     textureId = GL46.glGenTextures();
     GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
+
+    // Set texture parameters for wrapping
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_REPEAT);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_REPEAT);
+
+    // Set texture parameters for filtering
     GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER,
-        GL46.GL_LINEAR_MIPMAP_LINEAR);
+        GL46.GL_NEAREST_MIPMAP_NEAREST);
     GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_LINEAR);
-    GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA32F, width, height, 0, GL46.GL_RGBA,
-        GL46.GL_FLOAT, (FloatBuffer) null);
+
+    // Initialize the texture with empty data
+    GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA,
+        GL46.GL_FLOAT, 0);
+
+    // Generate mipmaps
+    GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
 
     // Setup Pixel Buffer Objects (PBOs) for asynchronous data transfer
     pboIds = new int[pboCount];
@@ -79,7 +99,6 @@ public class RenderData {
       GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, (long) width * height * 4 * Float.BYTES,
           GL46.GL_STREAM_DRAW);
     }
-    GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, 0);
   }
 
   /**
@@ -93,8 +112,7 @@ public class RenderData {
 
     // Bind and update the Vertex Buffer Object with new data
     GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertices, GL46.GL_DYNAMIC_DRAW);
-    GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, 0);
+    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertices, GL46.GL_STREAM_DRAW);
 
     // Use Pixel Buffer Objects for updating the texture
     int pboId = pboIds[nextPboIndex];
@@ -110,23 +128,30 @@ public class RenderData {
     }
     GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
 
-    // Update texture from the PBO
     GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
+
+    // Update texture from the PBO
     GL46.glTexSubImage2D(GL46.GL_TEXTURE_2D, 0, 0, 0, width, height, GL46.GL_RGBA, GL46.GL_FLOAT,
         0); // Use offset 0 in the PBO
+
     GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
-    GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, 0);
+
+    int error = GL46.glGetError();
+    if (error != GL46.GL_NO_ERROR) {
+      log.severe("OpenGL error: " + error);
+    }
   }
 
   /**
-   * Draws the vertices as points.
+   * Draws the vertices as polygons.
    */
   public void draw() {
 
-    GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
+    shaderProgram.use(); // Use the shader program
     GL46.glBindVertexArray(vao);
-    GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
-    GL46.glBindVertexArray(0);
+    GL46.glPointSize(4.0f);
+    GL46.glDrawArrays(GL46.GL_PATCHES, 0, numVertices);
+
   }
 
   /**
@@ -138,6 +163,7 @@ public class RenderData {
     GL46.glDeleteVertexArrays(vao);
     GL46.glDeleteTextures(textureId);
     GL46.glDeleteBuffers(pboIds);
+    shaderProgram.cleanup(); // Clean up the shader program
   }
 
 }
