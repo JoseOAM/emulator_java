@@ -52,12 +52,12 @@ public class Main {
 
     while (gpu.isAlive()) {
       if (gpu.getState() == Thread.State.TERMINATED) {
-        frameBuffer.swap();
-        System.out.println(Arrays.toString(bus.read(4096, 4130)));
         gpu.interrupt();
         cpu.interrupt();
       }
     }
+
+    System.out.println(Arrays.toString(bus.read(4096, 4130)));
   }
 
   private static void setup() {

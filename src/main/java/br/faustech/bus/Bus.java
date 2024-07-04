@@ -5,6 +5,7 @@ import static br.faustech.comum.ComponentType.MEMORY;
 
 import br.faustech.comum.ComponentType;
 import br.faustech.gpu.FrameBuffer;
+import br.faustech.gpu.GPU;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
@@ -20,6 +21,12 @@ public class Bus {
   private final FrameBuffer frameBuffer; // The frame buffer component
 
   private final Memory memory; // The memory component
+
+  private int writeFrameBufferProgramCounter = 0;
+
+  private int x;
+
+  private int y;
 
   /**
    * Constructs a Bus with specified frame buffer and memory components.
@@ -47,7 +54,31 @@ public class Bus {
       switch (componentType) {
         case FRAME_BUFFER:
           // Write to frame buffer if the address corresponds to it
-          frameBuffer.writeToBackBufferFromInts(address - Memory.getMemorySize(), value);
+          final int frameBufferAddress = address - Memory.getMemorySize();
+          if (frameBufferAddress == 0) {
+            frameBuffer.swap();
+          } else {
+            float[] frameData = new float[8];
+            if (writeFrameBufferProgramCounter == 0) {
+              frameData[0] = (value[0] / (float) GPU.getWidth()) * 2 - 1;
+              x = value[0];
+              writeFrameBufferProgramCounter++;
+            } else if (writeFrameBufferProgramCounter == 1) {
+              frameData[0] = ((GPU.getHeight() - value[0]) / (float) GPU.getHeight()) * 2 - 1;
+              y = value[0];
+              writeFrameBufferProgramCounter++;
+            } else if (writeFrameBufferProgramCounter == 2) {
+              frameData[0] = ((value[0] >> 16) & 0xFF) / 255.0f;
+              frameData[1] = ((value[0] >> 8) & 0xFF) / 255.0f;
+              frameData[2] = (value[0] & 0xFF) / 255.0f;
+              frameData[3] = ((value[0] >> 24) & 0xFF) / 255.0f;
+              frameData[4] = x / (float) GPU.getHeight();
+              frameData[5] = y / (float) GPU.getWidth();
+              writeFrameBufferProgramCounter = 0;
+            }
+
+            frameBuffer.writeToBackBufferFromFloats(frameBufferAddress - 1, frameData);
+          }
           break;
         case MEMORY:
           // Write to memory if the address corresponds to it
@@ -93,8 +124,8 @@ public class Bus {
 
     try {
       return switch (componentType) {
-        case FRAME_BUFFER -> frameBuffer.readFromFrontBufferAsInts(
-            address - Memory.getMemorySize(), endDataPosition - Memory.getMemorySize());
+        case FRAME_BUFFER -> frameBuffer.readFromFrontBufferAsInts(address - Memory.getMemorySize(),
+            endDataPosition - Memory.getMemorySize());
         case MEMORY -> memory.readAsInt(address, endDataPosition);
       };
     } catch (MemoryException e) {

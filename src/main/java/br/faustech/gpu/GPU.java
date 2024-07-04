@@ -2,6 +2,7 @@ package br.faustech.gpu;
 
 import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
+import lombok.Getter;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL46;
 
@@ -12,9 +13,9 @@ public class GPU extends ComponentThread {
 
   private final FrameBuffer frameBuffer;
 
-  private int width;
+  @Getter private static int width;
 
-  private int height;
+  @Getter private static int height;
 
   private ShaderProgram shaderProgram;
 
@@ -34,8 +35,8 @@ public class GPU extends ComponentThread {
       final FrameBuffer frameBuffer) {
 
     super(addresses);
-    this.width = width;
-    this.height = height;
+    GPU.width = width;
+    GPU.height = height;
     this.frameBuffer = frameBuffer;
   }
 
