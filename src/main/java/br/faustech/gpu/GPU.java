@@ -11,11 +11,11 @@ import org.lwjgl.opengl.GL46;
  */
 public class GPU extends ComponentThread {
 
-  private final FrameBuffer frameBuffer;
-
   @Getter private static int width;
 
   @Getter private static int height;
+
+  private final FrameBuffer frameBuffer;
 
   private ShaderProgram shaderProgram;
 
@@ -100,7 +100,7 @@ public class GPU extends ComponentThread {
    */
   private void render() throws MemoryException {
 
-    GL46.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    GL46.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
     shaderProgram.use();

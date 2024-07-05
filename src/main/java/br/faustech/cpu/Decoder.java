@@ -1,27 +1,40 @@
 package br.faustech.cpu;
 
+/**
+ * Decoder class decodes RISC-V instructions based on the given instruction integer.
+ */
 public class Decoder {
 
-  // Method to decode instructions
+  /**
+   * Decodes the given instruction and returns a string representation of the decoded instruction.
+   *
+   * @param instruction The instruction to decode.
+   * @return A string representation of the decoded instruction.
+   */
   public static String decodeInstruction(int instruction) {
 
     int opcode = instruction & 0x7F; // Mask for 7 bits
 
     return switch (opcode) {
-      case 0x33 -> decodeRType(instruction);              // R-Type
-      case 0x67 -> decodeITypeJumpAndLinkRegister(instruction); // I-Type-jalr
-      case 0x03 -> decodeITypeLoad(instruction);          // I-Type-load
-      case 0x13 -> decodeITypeImmediate(instruction);     // I-Type-immediate
-      case 0x73 -> decodeITypeControlStatusRegister(instruction); // I-Type-csr
-      case 0x23 -> decodeSType(instruction);              // S-Type
-      case 0x63 -> decodeBType(instruction);              // B-Type
-      case 0x37, 0x17 -> decodeUType(instruction);        // U-Type
-      case 0x6F -> decodeJType(instruction);              // J-Type
+      case 0x33 -> decodeRType(instruction);                          // R-Type
+      case 0x67 -> decodeITypeJumpAndLinkRegister(instruction);       // I-Type-jalr
+      case 0x03 -> decodeITypeLoad(instruction);                      // I-Type-load
+      case 0x13 -> decodeITypeImmediate(instruction);                 // I-Type-immediate
+      case 0x73 -> decodeITypeControlStatusRegister(instruction);     // I-Type-csr
+      case 0x23 -> decodeSType(instruction);                          // S-Type
+      case 0x63 -> decodeBType(instruction);                          // B-Type
+      case 0x37, 0x17 -> decodeUType(instruction);                    // U-Type
+      case 0x6F -> decodeJType(instruction);                          // J-Type
       default -> "Unknown Type";
     };
   }
 
-  // Decode the R Type instruction
+  /**
+   * Decodes the R-Type instruction.
+   *
+   * @param instruction The R-Type instruction to decode.
+   * @return A string representation of the decoded R-Type instruction.
+   */
   private static String decodeRType(int instruction) {
 
     int funct3 = (instruction >> 12) & 0x7;
@@ -45,7 +58,12 @@ public class Decoder {
     return String.format("%s rd=%d, rs1=%d, rs2=%d", operation, rd, rs1, rs2);
   }
 
-  // Decode the I Type instruction for Jump and Link Register
+  /**
+   * Decodes the I-Type instruction for Jump and Link Register.
+   *
+   * @param instruction The I-Type instruction to decode.
+   * @return A string representation of the decoded I-Type instruction for Jump and Link Register.
+   */
   private static String decodeITypeJumpAndLinkRegister(int instruction) {
 
     int imm = instruction >> 20;
@@ -55,7 +73,12 @@ public class Decoder {
     return String.format("jalr rd=%d, rs1=%d, imm=%d", rd, rs1, imm);
   }
 
-  // Decode the I Type instruction for Loads
+  /**
+   * Decodes the I-Type instruction for Loads.
+   *
+   * @param instruction The I-Type instruction to decode.
+   * @return A string representation of the decoded I-Type instruction for Loads.
+   */
   private static String decodeITypeLoad(int instruction) {
 
     int imm = instruction >> 20;
@@ -75,14 +98,19 @@ public class Decoder {
     return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
   }
 
-  // Decode the I Type instruction for Immediates
+  /**
+   * Decodes the I-Type instruction for Immediates.
+   *
+   * @param instruction The I-Type instruction to decode.
+   * @return A string representation of the decoded I-Type instruction for Immediates.
+   */
   private static String decodeITypeImmediate(int instruction) {
 
     int imm = instruction >> 20;
     int rs1 = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
     int rd = (instruction >> 7) & 0x1F;
-    boolean aux = false;
+    boolean shift = false;
     String operation = switch (funct3) {
       case 0b000 -> "addi";
       case 0b010 -> "slti";
@@ -92,23 +120,29 @@ public class Decoder {
       case 0b111 -> "andi";
       case 0b001 -> {
         imm &= 0x1F;
-        aux = true;
+        shift = true;
         yield "slli";
       }
       case 0b101 -> {
         String op = (imm & 0xFE0) == 0 ? "srli" : "srai";
         imm &= 0x1F;
-        aux = true;
+        shift = true;
         yield op;
       }
       default -> "unknown";
     };
-    return aux ? String.format("%s rd=%d, rs1=%d, shamt=%d", operation, rd, rs1, imm)
+    return shift ? String.format("%s rd=%d, rs1=%d, shamt=%d", operation, rd, rs1, imm)
         : String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
 
   }
 
-  // Decode the I Type instruction for Control Status Register Atomic Operations
+  /**
+   * Decodes the I-Type instruction for Control Status Register Atomic Operations.
+   *
+   * @param instruction The I-Type instruction to decode.
+   * @return A string representation of the decoded I-Type instruction for Control Status Register
+   * Atomic Operations.
+   */
   private static String decodeITypeControlStatusRegister(int instruction) {
 
     int csr = instruction >> 20;
@@ -131,7 +165,12 @@ public class Decoder {
         : String.format("%s rd=%d, csr=%d, rs1=%d", operation, rd, csr, rs1_or_zimm);
   }
 
-  // Decode the S Type instruction
+  /**
+   * Decodes the S-Type instruction.
+   *
+   * @param instruction The S-Type instruction to decode.
+   * @return A string representation of the decoded S-Type instruction.
+   */
   private static String decodeSType(int instruction) {
 
     int imm11_5 = (instruction >> 25) & 0x7F;
@@ -151,7 +190,12 @@ public class Decoder {
     return String.format("%s rs1=%d, rs2=%d, imm=%d", operation, rs1, rs2, imm);
   }
 
-  // Decode the B Type instruction
+  /**
+   * Decodes the B-Type instruction.
+   *
+   * @param instruction The B-Type instruction to decode.
+   * @return A string representation of the decoded B-Type instruction.
+   */
   private static String decodeBType(int instruction) {
 
     int imm12 = (instruction >> 31) & 0x01;
@@ -176,7 +220,12 @@ public class Decoder {
     return String.format("%s rs1=%d, rs2=%d, imm=%d", operation, rs1, rs2, imm);
   }
 
-  // Decode the U Type instruction
+  /**
+   * Decodes the U-Type instruction.
+   *
+   * @param instruction The U-Type instruction to decode.
+   * @return A string representation of the decoded U-Type instruction.
+   */
   private static String decodeUType(int instruction) {
 
     int imm31_12 = instruction >> 12;
@@ -192,7 +241,12 @@ public class Decoder {
     return String.format("%s rd=%d, imm=%d", operation, rd, imm31_12);
   }
 
-  // Decode the J Type instruction
+  /**
+   * Decodes the J-Type instruction.
+   *
+   * @param instruction The J-Type instruction to decode.
+   * @return A string representation of the decoded J-Type instruction.
+   */
   private static String decodeJType(int instruction) {
 
     int imm20 = (instruction >> 31) & 0x1;
@@ -206,4 +260,3 @@ public class Decoder {
   }
 
 }
-

@@ -9,21 +9,32 @@ import java.util.function.BiFunction;
 import lombok.Getter;
 import lombok.extern.java.Log;
 
+/**
+ * CPU class represents a simulated CPU implementing a subset of RISC-V instructions.
+ */
 @Log
 public class CPU extends ComponentThread {
 
-  @Getter private static final int[] registers = new int[32]; // 32 general-purpose registers
+  /** General-purpose registers. */
+  @Getter private static final int[] registers = new int[32];
 
-  private static final int[] csrRegisters = new int[4096]; // CSR registers
+  /** CSR (Control and Status Register) registers. */
+  private static final int[] csrRegisters = new int[4096];
 
+  /** Program counter (PC). */
   @Getter private static int programCounter;
 
   private static Bus bus;
 
+  /**
+   * Constructor for CPU class.
+   *
+   * @param addresses Memory addresses for CPU operation.
+   * @param bus       Bus object for memory access.
+   */
   public CPU(final int[] addresses, final Bus bus) {
 
     super(addresses);
-
     programCounter = 0;
     CPU.bus = bus;
   }
@@ -38,8 +49,11 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Retrieves the next instruction from memory and executes it.
+   */
   public static void getNextInstructionInMemory() {
-    // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
+
     try {
       int instruction = bus.read(programCounter, programCounter + 4)[0];
       executeInstruction(instruction);
@@ -48,11 +62,15 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Executes the given instruction.
+   *
+   * @param instruction The instruction to execute.
+   * @throws MemoryException If there is an issue with memory access.
+   */
   public static void executeInstruction(int instruction) throws MemoryException {
 
     String decodedInstruction = Decoder.decodeInstruction(instruction);
-
-    // Parse the decoded instruction
     String[] parts = decodedInstruction.split(" ");
 
     String operation = parts[0];
@@ -60,36 +78,44 @@ public class CPU extends ComponentThread {
 
     switch (operation) {
       case "add":
-        executeRType(parts, Integer::sum);
-        break;
       case "sub":
-        executeRType(parts, (a, b) -> a - b);
-        break;
       case "sll":
-        executeRType(parts, (a, b) -> a << b);
-        break;
       case "slt":
-        executeRType(parts, (a, b) -> a < b ? 1 : 0);
-        break;
       case "sltu":
-        executeRType(parts, (a, b) -> Integer.compareUnsigned(a, b) < 0 ? 1 : 0);
-        break;
       case "xor":
-        executeRType(parts, (a, b) -> a ^ b);
-        break;
       case "srl":
-        executeRType(parts, (a, b) -> a >>> b);
-        break;
       case "sra":
-        executeRType(parts, (a, b) -> a >> b);
-        break;
       case "or":
-        executeRType(parts, (a, b) -> a | b);
-        break;
       case "and":
-        executeRType(parts, (a, b) -> a & b);
+        executeRType(parts, (a, b) -> {
+          switch (operation) {
+            case "add":
+              return Integer.sum(a, b);
+            case "sub":
+              return a - b;
+            case "sll":
+              return a << b;
+            case "slt":
+              return (a < b) ? 1 : 0;
+            case "sltu":
+              return (Integer.compareUnsigned(a, b) < 0) ? 1 : 0;
+            case "xor":
+              return a ^ b;
+            case "srl":
+              return a >>> b;
+            case "sra":
+              return a >> b;
+            case "or":
+              return a | b;
+            case "and":
+              return a & b;
+            default:
+              throw new RuntimeException("Unsupported operation: " + operation);
+          }
+        });
         break;
-      case "lui", "auipc":
+      case "lui":
+      case "auipc":
         executeUType(parts);
         break;
       case "jal":
@@ -143,10 +169,16 @@ public class CPU extends ComponentThread {
         break;
       default:
         programCounter -= 4; // Revert PC increment if the operation is unknown
-        throw new RuntimeException(String.format("Unknown operation: %s", operation));
+        throw new RuntimeException("Unknown operation: " + operation);
     }
   }
 
+  /**
+   * Executes R-Type instructions (register-register operations).
+   *
+   * @param parts     The parts of the decoded instruction.
+   * @param operation The operation to perform.
+   */
   private static void executeRType(String[] parts,
       BiFunction<Integer, Integer, Integer> operation) {
 
@@ -154,20 +186,24 @@ public class CPU extends ComponentThread {
     int rs1 = getRegisterIndex(parts, 2);
     int rs2 = getRegisterIndex(parts, 3);
 
-    // Access the values in registers rs1 and rs2
     int value1 = registers[rs1];
     int value2 = registers[rs2];
 
-    // Perform the operation and store the result in register rd
     registers[rd] = operation.apply(value1, value2);
 
     log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
   }
 
+  /**
+   * Executes U-Type instructions (upper immediate).
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeUType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
+
     switch (parts[0]) {
       case "lui":
         registers[rd] = imm;
@@ -182,18 +218,28 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
   }
 
+  /**
+   * Executes J-Type instructions (jump and link).
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeJType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
 
     registers[rd] = programCounter;
-    programCounter += imm - 4; // -4 Adjust for the default increment
+    programCounter += imm - 4; // Adjust for the default increment
 
     log.info(
         String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
   }
 
+  /**
+   * Executes I-Type instructions for jump and link register.
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeITypeJumpAndLinkRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -207,6 +253,12 @@ public class CPU extends ComponentThread {
         programCounter));
   }
 
+  /**
+   * Executes I-Type instructions for loads.
+   *
+   * @param parts The parts of the decoded instruction.
+   * @throws MemoryException If there is an issue with memory access.
+   */
   private static void executeITypeLoad(String[] parts) throws MemoryException {
 
     int rd = getRegisterIndex(parts, 1);
@@ -243,6 +295,11 @@ public class CPU extends ComponentThread {
             imm, rd, address, value));
   }
 
+  /**
+   * Executes B-Type instructions (branch).
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeBType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
@@ -267,6 +324,11 @@ public class CPU extends ComponentThread {
         programCounter));
   }
 
+  /**
+   * Executes S-Type instructions (store).
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeSType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
@@ -295,6 +357,11 @@ public class CPU extends ComponentThread {
             address));
   }
 
+  /**
+   * Executes I-Type instructions with immediate values.
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeITypeImmediate(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -318,6 +385,11 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
   }
 
+  /**
+   * Executes E-Type instructions (environment).
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeEType(String[] parts) {
 
     switch (parts[0]) {
@@ -330,6 +402,11 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Executes I-Type instructions for control and status register (CSR) operations.
+   *
+   * @param parts The parts of the decoded instruction.
+   */
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -367,6 +444,13 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
   }
 
+  /**
+   * Retrieves the register index from the parts of a decoded instruction.
+   *
+   * @param parts     The parts of the decoded instruction.
+   * @param partIndex The index of the part containing the register index.
+   * @return The register index.
+   */
   private static int getRegisterIndex(String[] parts, int partIndex) {
 
     try {
@@ -377,6 +461,13 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Retrieves the immediate value from the parts of a decoded instruction.
+   *
+   * @param parts     The parts of the decoded instruction.
+   * @param partIndex The index of the part containing the immediate value.
+   * @return The immediate value.
+   */
   private static int getImmediateValue(String[] parts, int partIndex) {
 
     try {
@@ -387,14 +478,19 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Handles an ecall instruction.
+   */
   private static void handleEcall() {
-    //TODO
+    //TODO: Implement handling of ecall instruction
     log.info("ECALL: Transferred control to exception handler for syscall");
-
   }
 
+  /**
+   * Handles an ebreak instruction.
+   */
   private static void handleEbreak() {
-    //TODO
+    //TODO: Implement handling of ebreak instruction
     throw new RuntimeException("Program has terminated via syscall exit.");
   }
 

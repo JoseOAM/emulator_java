@@ -7,7 +7,7 @@ import br.faustech.gpu.GPU;
 import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class Main {
@@ -16,36 +16,21 @@ public class Main {
 
   private static Bus bus;
 
-  private static FrameBuffer frameBuffer;
-
-
   private static GPU gpu;
 
   private static CPU cpu;
 
-  public static void main(String[] args) throws FileNotFoundException {
+  public static void main(String[] args) throws IOException {
 
 //    if (args.length < 1) {
 //      throw new IllegalArgumentException("Program file name not provided.");
 //    }
 
-    String filename = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.bin";
-
-    // Check if the file extension is .bin
-    if (!filename.toLowerCase().endsWith(".bin")) {
-      throw new IllegalArgumentException("Invalid file type. The file must be a .bin file.");
-    }
-
-    File file = new File(filename);
-
-    if (!file.exists()) {
-      throw new FileNotFoundException(String.format("File %s not found.", filename));
-    }
+    String filename = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
 
     setup();
 
-    String program = programUtils.readFile(file);
-    programUtils.writeProgramInMemory(program);
+    programUtils.writeProgramInMemory(programUtils.readFile(new File(filename)));
 
     gpu.start();
     cpu.start();
@@ -77,7 +62,7 @@ public class Main {
       }
     }
 
-    frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
+    FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
     Memory memory = new Memory(memoryAddresses, memorySize);
     bus = new Bus(frameBuffer, memory);
     programUtils = new ProgramUtils(bus);
