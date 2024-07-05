@@ -2,6 +2,7 @@ package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
+import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import java.util.Arrays;
@@ -184,8 +185,8 @@ public class CPU extends ComponentThread {
   private static void executeUType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
-    int imm = getImmediateValue(parts, 2);
-    imm = signExtendImmediate(imm,20);
+    int imm = getImmediateValue(parts, 2)<< 12;
+
     switch (parts[0]) {
       case "lui":
         registers[rd] = imm;
@@ -293,7 +294,7 @@ public class CPU extends ComponentThread {
     int imm = getImmediateValue(parts, 3);
     imm = signExtendImmediate(imm,12);
     int address = registers[rs1] + imm;
-    if (address < 0 || address >= Memory.getMemorySize()) {
+    if (address < 0) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
 
