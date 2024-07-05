@@ -20,6 +20,7 @@ public class ProgramUtils {
    * @param bus The Bus instance to use for memory operations.
    */
   public ProgramUtils(Bus bus) {
+
     this.bus = bus;
   }
 
@@ -32,6 +33,7 @@ public class ProgramUtils {
    * @throws IllegalArgumentException If the file extension is neither .bin nor .txt.
    */
   public int[] readFile(File file) throws IOException {
+
     String fileName = file.getName();
     if (fileName.endsWith(".bin")) {
       return readBinaryFile(file);
@@ -51,6 +53,7 @@ public class ProgramUtils {
    * @throws IllegalArgumentException If the file does not have a .bin extension.
    */
   public int[] readBinaryFile(File file) throws IOException {
+
     String fileName = file.getName();
     if (!fileName.endsWith(".bin")) {
       throw new IllegalArgumentException("File must have .bin extension.");
@@ -66,9 +69,9 @@ public class ProgramUtils {
 
       for (int i = 0; i < programBin.length; i++) {
         int value = ((buffer[index++] & 0xFF) << 24) |
-                    ((buffer[index++] & 0xFF) << 16) |
-                    ((buffer[index++] & 0xFF) << 8) |
-                    (buffer[index++] & 0xFF);
+            ((buffer[index++] & 0xFF) << 16) |
+            ((buffer[index++] & 0xFF) << 8) |
+            (buffer[index++] & 0xFF);
         programBin[i] = value;
       }
 
@@ -85,6 +88,7 @@ public class ProgramUtils {
    * @throws IllegalArgumentException If the file does not have a .txt extension.
    */
   public int[] readTxtFile(File file) throws FileNotFoundException {
+
     if (!file.exists()) {
       throw new FileNotFoundException(String.format("File %s not found.", file.getName()));
     }
@@ -115,6 +119,8 @@ public class ProgramUtils {
    * @param programBin The array of integers representing program instructions.
    */
   public void writeProgramInMemory(int[] programBin) {
+
     bus.write(0, programBin); // Write programBin data to memory starting at address 0
   }
+
 }

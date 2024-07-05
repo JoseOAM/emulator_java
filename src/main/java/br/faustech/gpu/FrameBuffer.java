@@ -15,11 +15,11 @@ public class FrameBuffer extends Component {
 
   @Getter private static int bufferSize; // Size of each buffer
 
+  private final byte[] pixelBuffer; // Buffer to store pixel data
+
   private byte[] frontBuffer; // Buffer currently displayed
 
   private byte[] backBuffer; // Buffer to write new data to
-
-  private final byte[] pixelBuffer; // Buffer to store pixel data
 
   /**
    * Constructs a FrameBuffer with specified memory addresses and buffer size.
