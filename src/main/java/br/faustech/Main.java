@@ -49,7 +49,7 @@ public class Main {
 
     int WIDTH = 800;
     int HEIGHT = 600;
-    int frameBufferSize = WIDTH * HEIGHT * 8 * 4;
+    int frameBufferSize = WIDTH * HEIGHT;
     int memorySize = 4096;
 
     int[] memoryAddresses = new int[memorySize];

@@ -30,8 +30,9 @@ public class FrameBuffer extends Component {
   public FrameBuffer(final int[] addresses, final int bufferSize) {
 
     super(addresses);
-    this.frontBuffer = new byte[bufferSize]; // Initialize front buffer
-    this.backBuffer = new byte[bufferSize]; // Initialize back buffer
+    this.frontBuffer = new byte[bufferSize * 8 * 4];  // Initialize front buffer
+    this.backBuffer = new byte[bufferSize * 8 * 4];   // Initialize back buffer
+    this.pixelBuffer = new byte[bufferSize];          // Initialize pixel buffer
     FrameBuffer.bufferSize = bufferSize;
   }
 
@@ -58,27 +59,34 @@ public class FrameBuffer extends Component {
     if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length) {
       throw new MemoryException("Invalid data positions or data length.");
     }
-
     System.arraycopy(data, 0, backBuffer, beginDataPosition, data.length);
   }
 
+  /**
+   * Writes pixel data to the back buffer starting from a specified position.
+   *
+   * @param beginDataPosition The starting position in the back buffer.
+   * @param data              The pixel data as an integer.
+   * @throws MemoryException If the write operation exceeds buffer limits.
+   */
   public void writePixel(final int beginDataPosition, final int data) throws MemoryException {
 
-    this.writeToBackBufferFromInts(beginDataPosition, new int[]{data});
+    this.writeToPixelBufferFromInts(beginDataPosition, new int[]{data});
 
-    int x = beginDataPosition - super.getAddresses()[0] % GPU.getWidth();
-    int y = beginDataPosition - super.getAddresses()[0] % GPU.getWidth();
+    // Calculate normalized coordinates for texture mapping
+    int x = beginDataPosition % GPU.getWidth();
+    int y = beginDataPosition / GPU.getWidth();
 
     float normX = (x / (float) GPU.getWidth()) * 2 - 1;
     float normY = ((GPU.getHeight() - y) / (float) GPU.getHeight()) * 2 - 1;
 
     this.writeToBackBufferFromFloats(8 * (y * GPU.getWidth() + x),
-        new float[]{normX, normY, ((data >> 16) & 0xFF) / 255.0f,  // r
-            ((data >> 8) & 0xFF) / 255.0f,                         // g
-            (data & 0xFF) / 255.0f,                                // b
-            ((data >> 24) & 0xFF) / 255.0f,                        // a
-            x / (float) GPU.getWidth(),                            // u
-            y / (float) GPU.getHeight()                            // v
+        new float[]{normX, normY, ((data >> 16) & 0xFF) / 255.0f,   // r
+            ((data >> 8) & 0xFF) / 255.0f,                          // g
+            (data & 0xFF) / 255.0f,                                 // b
+            ((data >> 24) & 0xFF) / 255.0f,                         // a
+            x / (float) GPU.getWidth(),                             // u
+            y / (float) GPU.getHeight()                             // v
         });
   }
 
@@ -89,10 +97,10 @@ public class FrameBuffer extends Component {
    * @param data              The integer data to be converted and written.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writeToBackBufferFromInts(final int beginDataPosition, final int[] data)
+  public void writeToPixelBufferFromInts(final int beginDataPosition, final int[] data)
       throws MemoryException {
 
-    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length / 4) {
+    if (beginDataPosition < 0 || beginDataPosition + data.length > pixelBuffer.length / 4) {
       throw new MemoryException("Invalid data positions or data length.");
     }
 
@@ -101,7 +109,7 @@ public class FrameBuffer extends Component {
     intBuffer.put(data);
 
     byteBuffer.rewind();
-    byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
+    byteBuffer.get(pixelBuffer, beginDataPosition * 4, byteBuffer.remaining());
   }
 
   /**
@@ -171,6 +179,15 @@ public class FrameBuffer extends Component {
     return floatArray;
   }
 
+  /**
+   * Retrieves a ByteBuffer from the given buffer with specified start and end positions.
+   *
+   * @param buffer            The byte array buffer.
+   * @param beginDataPosition The starting index in the buffer.
+   * @param endDataPosition   The ending index in the buffer.
+   * @return A ByteBuffer positioned at the specified data range.
+   * @throws MemoryException If invalid data positions are used.
+   */
   private ByteBuffer getByteBufferFromBuffer(final byte[] buffer, final int beginDataPosition,
       final int endDataPosition) throws MemoryException {
 
@@ -198,7 +215,7 @@ public class FrameBuffer extends Component {
 
     int length = endDataPosition - beginDataPosition;
 
-    final ByteBuffer byteBuffer = getByteBufferFromBuffer(frontBuffer, beginDataPosition,
+    final ByteBuffer byteBuffer = getByteBufferFromBuffer(pixelBuffer, beginDataPosition,
         endDataPosition);
 
     IntBuffer intBuffer = byteBuffer.asIntBuffer();
