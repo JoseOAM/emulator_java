@@ -26,7 +26,9 @@ public class CPU extends ComponentThread {
 
     programCounter = 0;
     CPU.bus = bus;
+    initializeRegisters();
   }
+
 
   @Override
   public void run() {
@@ -37,6 +39,20 @@ public class CPU extends ComponentThread {
       getNextInstructionInMemory();
       System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
+  }
+  public static void initializeRegisters() {
+    // Stack Pointer (sp) to the top of the memory
+    registers[2] = 4092;
+
+    // Global Pointer (gp) to some midpoint in memory, e.g., for global data
+    registers[3] = 2048;
+
+    // Thread Pointer (tp) to some specific address for thread-local data
+    registers[4] = 3000;
+
+    // Frame Pointer (fp) to the start of the stack
+    registers[8] = registers[2];
+
   }
 
   public static void getNextInstructionInMemory() {
@@ -169,6 +185,7 @@ public class CPU extends ComponentThread {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
+    imm = signExtendImmediate(imm,20);
     switch (parts[0]) {
       case "lui":
         registers[rd] = imm;
@@ -187,7 +204,7 @@ public class CPU extends ComponentThread {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
-
+    imm = signExtendImmediate(imm,20);
     registers[rd] = programCounter;
     programCounter += imm - 4; // -4 Adjust for the default increment
 
@@ -200,7 +217,7 @@ public class CPU extends ComponentThread {
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
-
+    imm = signExtendImmediate(imm,12);
     registers[rd] = programCounter;
     programCounter = (registers[rs1] + imm) & ~1;
 
@@ -213,8 +230,9 @@ public class CPU extends ComponentThread {
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
-
+    imm = signExtendImmediate(imm,12);
     int address = registers[rs1] + imm;
+
     if (address < 0) {
       throw new MemoryException(String.format("Memory access out of bounds: %d", address));
     }
@@ -249,7 +267,7 @@ public class CPU extends ComponentThread {
     int rs1 = getRegisterIndex(parts, 1);
     int rs2 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
-
+    imm = signExtendImmediate(imm,12);
     boolean condition = switch (parts[0]) {
       case "beq" -> (registers[rs1] == registers[rs2]);
       case "bne" -> (registers[rs1] != registers[rs2]);
@@ -273,8 +291,8 @@ public class CPU extends ComponentThread {
     int rs1 = getRegisterIndex(parts, 1);
     int rs2 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
-
-    int address = (registers[rs1] + imm) * 4;
+    imm = signExtendImmediate(imm,12);
+    int address = registers[rs1] + imm;
     if (address < 0 || address >= Memory.getMemorySize()) {
       throw new RuntimeException(String.format("Memory access out of bounds: %d", address));
     }
@@ -292,8 +310,8 @@ public class CPU extends ComponentThread {
     }
 
     log.info(
-        String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d", parts[0], rs1, rs2, imm,
-            address));
+        String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1, rs2, imm,
+            address,registers[rs2]));
   }
 
   private static void executeITypeImmediate(String[] parts) {
@@ -301,7 +319,7 @@ public class CPU extends ComponentThread {
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
     int imm = getImmediateValue(parts, 3);
-
+    imm = signExtendImmediate(imm,12);
     int result = switch (parts[0]) {
       case "addi" -> registers[rs1] + imm;
       case "slti" -> (registers[rs1] < imm) ? 1 : 0;
@@ -336,7 +354,7 @@ public class CPU extends ComponentThread {
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
     int csr = getImmediateValue(parts, 3);
-
+    csr = signExtendImmediate(csr,12);
     int csrValue = csrRegisters[csr];
     switch (parts[0]) {
       case "csrrw":
@@ -377,7 +395,17 @@ public class CPU extends ComponentThread {
           String.format("Invalid register index in part: %s", parts[partIndex]));
     }
   }
+  public static int signExtendImmediate(int immediate, int bitWidth) {
+    int mask = 1 << (bitWidth - 1);
+    immediate = immediate & ((1 << bitWidth) - 1); // Garantir que o imediato tenha no máximo 'bitWidth' bits
 
+    // Se o bit mais significativo estiver definido, o valor é negativo
+    if ((immediate & mask) != 0) {
+      immediate = immediate | ~((1 << bitWidth) - 1);
+    }
+
+    return immediate;
+  }
   private static int getImmediateValue(String[] parts, int partIndex) {
 
     try {
