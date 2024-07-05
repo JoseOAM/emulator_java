@@ -19,7 +19,7 @@ public class FrameBuffer extends Component {
 
   private byte[] backBuffer; // Buffer to write new data to
 
-  private byte[] pixelBuffer; // Buffer to store pixel data
+  private final byte[] pixelBuffer; // Buffer to store pixel data
 
   /**
    * Constructs a FrameBuffer with specified memory addresses and buffer size.
@@ -74,7 +74,7 @@ public class FrameBuffer extends Component {
     this.writeToPixelBufferFromInts(beginDataPosition, new int[]{data});
 
     // Calculate normalized coordinates for texture mapping
-    int x = beginDataPosition % GPU.getWidth();
+    int x = beginDataPosition / GPU.getWidth();
     int y = beginDataPosition / GPU.getWidth();
 
     float normX = (x / (float) GPU.getWidth()) * 2 - 1;
