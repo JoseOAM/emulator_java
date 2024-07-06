@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import lombok.Getter;
 
 /**
@@ -37,16 +38,6 @@ public class FrameBuffer extends Component {
   }
 
   /**
-   * Swaps the front and back buffers, promoting the back to front for display.
-   */
-  public void swap() {
-
-    byte[] temp = frontBuffer;
-    frontBuffer = backBuffer;
-    backBuffer = temp;
-  }
-
-  /**
    * Writes data to the back buffer starting from a specified position.
    *
    * @param beginDataPosition The starting position in the back buffer.
@@ -69,25 +60,33 @@ public class FrameBuffer extends Component {
    * @param data              The pixel data as an integer.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writePixel(final int beginDataPosition, final int data) throws MemoryException {
+  public void writePixel(int beginDataPosition, final int data) throws MemoryException {
 
     this.writeToPixelBufferFromInts(beginDataPosition, new int[]{data});
 
+    beginDataPosition *= (int) 2.666666666666667;
+
+    int width = GPU.getWidth();
+    int height = GPU.getHeight();
+
     // Calculate normalized coordinates for texture mapping
-    int x = beginDataPosition / GPU.getWidth();
-    int y = beginDataPosition / GPU.getWidth();
+    int x = beginDataPosition % width;
+    int y = beginDataPosition / width;
 
-    float normX = (x / (float) GPU.getWidth()) * 2 - 1;
-    float normY = ((GPU.getHeight() - y) / (float) GPU.getHeight()) * 2 - 1;
+    float normX = (x / (float) width) * 2 - 1;
+    float normY = ((height - y) / (float) height) * 2 - 1;
 
-    this.writeToBackBufferFromFloats(8 * (y * GPU.getWidth() + x),
-        new float[]{normX, normY, ((data >> 16) & 0xFF) / 255.0f,   // r
-            ((data >> 8) & 0xFF) / 255.0f,                          // g
-            (data & 0xFF) / 255.0f,                                 // b
-            ((data >> 24) & 0xFF) / 255.0f,                         // a
-            x / (float) GPU.getWidth(),                             // u
-            y / (float) GPU.getHeight()                             // v
-        });
+    final float[] pixel = new float[]{normX, normY, ((data >> 16) & 0xFF) / 255.0f,  // r
+        ((data >> 8) & 0xFF) / 255.0f,                         // g
+        (data & 0xFF) / 255.0f,                                // b
+        ((data >> 24) & 0xFF) / 255.0f,                        // a
+        x / (float) width,                                     // u
+        y / (float) height                                     // v
+    };
+
+    this.writeToBackBufferFromFloats(0, pixel);
+    this.swap();
+    System.out.println(Arrays.toString(pixel));
   }
 
   /**
@@ -132,6 +131,16 @@ public class FrameBuffer extends Component {
 
     byteBuffer.rewind();
     byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
+  }
+
+  /**
+   * Swaps the front and back buffers, promoting the back to front for display.
+   */
+  public void swap() {
+
+    byte[] temp = frontBuffer;
+    frontBuffer = backBuffer;
+    backBuffer = temp;
   }
 
   /**

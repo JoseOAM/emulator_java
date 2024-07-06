@@ -3,11 +3,15 @@ package br.faustech.cpu;
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import lombok.extern.java.Log;
 
+/**
+ * CPU class that extends ComponentThread to simulate a CPU execution environment. This class
+ * handles the initialization of registers, the program counter, and executes instructions fetched
+ * from memory.
+ */
 @Log
 public class CPU extends ComponentThread {
 
@@ -19,30 +23,37 @@ public class CPU extends ComponentThread {
 
   private static Bus bus;
 
+  /**
+   * Constructor for the CPU class.
+   *
+   * @param addresses array of addresses for the component
+   * @param bus       the Bus instance for memory access
+   */
   public CPU(final int[] addresses, final Bus bus) {
 
     super(addresses);
-
     programCounter = 0;
     CPU.bus = bus;
     initializeRegisters();
   }
 
+  /**
+   * Initializes the CPU registers with predefined values.
+   */
   public static void initializeRegisters() {
     // Stack Pointer (sp) to the top of the memory
     registers[2] = 4092;
-
     // Global Pointer (gp) to some midpoint in memory, e.g., for global data
     registers[3] = 2048;
-
     // Thread Pointer (tp) to some specific address for thread-local data
     registers[4] = 3000;
-
     // Frame Pointer (fp) to the start of the stack
     registers[8] = registers[2];
-
   }
 
+  /**
+   * The main execution loop of the CPU. Fetches and executes instructions continuously.
+   */
   @Override
   public void run() {
 
@@ -50,10 +61,13 @@ public class CPU extends ComponentThread {
     // TODO: Implement the CPU execution loop
     while (true) {
       getNextInstructionInMemory();
-      System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
+      // System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
   }
 
+  /**
+   * Fetches the next instruction from memory and executes it.
+   */
   public static void getNextInstructionInMemory() {
     // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
     try {
@@ -64,13 +78,17 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Decodes and executes a given instruction.
+   *
+   * @param instruction the instruction to be executed
+   * @throws MemoryException if there is an error accessing memory
+   */
   public static void executeInstruction(int instruction) throws MemoryException {
 
     String decodedInstruction = Decoder.decodeInstruction(instruction);
-
     // Parse the decoded instruction
     String[] parts = decodedInstruction.split(" ");
-
     String operation = parts[0];
     programCounter += 4; // Increment PC for next instruction, by default
 
@@ -105,7 +123,8 @@ public class CPU extends ComponentThread {
       case "and":
         executeRType(parts, (a, b) -> a & b);
         break;
-      case "lui", "auipc":
+      case "lui":
+      case "auipc":
         executeUType(parts);
         break;
       case "jal":
@@ -163,6 +182,12 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Executes R-Type instructions which involve register-to-register operations.
+   *
+   * @param parts     the instruction parts
+   * @param operation the operation to be performed
+   */
   private static void executeRType(String[] parts,
       BiFunction<Integer, Integer, Integer> operation) {
 
@@ -180,6 +205,11 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
   }
 
+  /**
+   * Executes U-Type instructions which involve immediate values.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeUType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -199,18 +229,28 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
   }
 
+  /**
+   * Executes J-Type instructions which involve jump operations.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeJType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
     imm = signExtendImmediate(imm, 20);
     registers[rd] = programCounter;
-    programCounter += imm - 4; // -4 Adjust for the default increment
+    programCounter += imm - 4; // Adjust for the default increment
 
     log.info(
         String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
   }
 
+  /**
+   * Executes I-Type jump and link register instructions.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeITypeJumpAndLinkRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -224,6 +264,12 @@ public class CPU extends ComponentThread {
         programCounter));
   }
 
+  /**
+   * Executes I-Type load instructions which involve memory load operations.
+   *
+   * @param parts the instruction parts
+   * @throws MemoryException if there is an error accessing memory
+   */
   private static void executeITypeLoad(String[] parts) throws MemoryException {
 
     int rd = getRegisterIndex(parts, 1);
@@ -261,6 +307,11 @@ public class CPU extends ComponentThread {
             imm, rd, address, value));
   }
 
+  /**
+   * Executes B-Type instructions which involve conditional branches.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeBType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
@@ -285,6 +336,11 @@ public class CPU extends ComponentThread {
         programCounter));
   }
 
+  /**
+   * Executes S-Type instructions which involve memory store operations.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeSType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
@@ -313,6 +369,11 @@ public class CPU extends ComponentThread {
             rs2, imm, address, registers[rs2]));
   }
 
+  /**
+   * Executes I-Type immediate instructions which involve immediate values.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeITypeImmediate(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -336,6 +397,11 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
   }
 
+  /**
+   * Executes E-Type instructions which handle system calls and breaks.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeEType(String[] parts) {
 
     switch (parts[0]) {
@@ -348,6 +414,11 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Executes I-Type control and status register instructions.
+   *
+   * @param parts the instruction parts
+   */
   private static void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
@@ -385,6 +456,13 @@ public class CPU extends ComponentThread {
     log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
   }
 
+  /**
+   * Retrieves the index of a register from the instruction parts.
+   *
+   * @param parts     the instruction parts
+   * @param partIndex the index of the part to retrieve the register index from
+   * @return the register index
+   */
   private static int getRegisterIndex(String[] parts, int partIndex) {
 
     try {
@@ -395,6 +473,13 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Retrieves the immediate value from the instruction parts.
+   *
+   * @param parts     the instruction parts
+   * @param partIndex the index of the part to retrieve the immediate value from
+   * @return the immediate value
+   */
   private static int getImmediateValue(String[] parts, int partIndex) {
 
     try {
@@ -405,28 +490,40 @@ public class CPU extends ComponentThread {
     }
   }
 
+  /**
+   * Sign-extends an immediate value to the specified bit width.
+   *
+   * @param immediate the immediate value to be sign-extended
+   * @param bitWidth  the bit width to extend to
+   * @return the sign-extended immediate value
+   */
   public static int signExtendImmediate(int immediate, int bitWidth) {
 
     int mask = 1 << (bitWidth - 1);
-    immediate = immediate & ((1 << bitWidth)
-        - 1); // Garantir que o imediato tenha no máximo 'bitWidth' bits
+    immediate =
+        immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
 
-    // Se o bit mais significativo estiver definido, o valor é negativo
+    // If the most significant bit is set, the value is negative
     if ((immediate & mask) != 0) {
-      immediate = immediate | ~((1 << bitWidth) - 1);
+      immediate = immediate | -(1 << bitWidth);
     }
 
     return immediate;
   }
 
+  /**
+   * Handles the "ecall" instruction by transferring control to the exception handler.
+   */
   private static void handleEcall() {
-    //TODO
+    // TODO
     log.info("ECALL: Transferred control to exception handler for syscall");
-
   }
 
+  /**
+   * Handles the "ebreak" instruction by terminating the program via syscall exit.
+   */
   private static void handleEbreak() {
-    //TODO
+    // TODO
     throw new RuntimeException("Program has terminated via syscall exit.");
   }
 

@@ -68,10 +68,8 @@ public class ProgramUtils {
       int index = 0;
 
       for (int i = 0; i < programBin.length; i++) {
-        int value = ((buffer[index++] & 0xFF) << 24) |
-            ((buffer[index++] & 0xFF) << 16) |
-            ((buffer[index++] & 0xFF) << 8) |
-            (buffer[index++] & 0xFF);
+        int value = ((buffer[index++] & 0xFF) << 24) | ((buffer[index++] & 0xFF) << 16) | (
+            (buffer[index++] & 0xFF) << 8) | (buffer[index++] & 0xFF);
         programBin[i] = value;
       }
 
@@ -105,9 +103,8 @@ public class ProgramUtils {
     int[] programBin = new int[lines.length];
 
     for (int i = 0; i < lines.length; i++) {
-      String firstBit = lines[i].substring(0, 1);
-      String line = lines[i].substring(1);
-      programBin[i] = Integer.parseInt((firstBit.equals("0")) ? line : "-" + line, 2);
+      long longValue = Long.parseLong(lines[i], 2);
+      programBin[i] = (int) longValue;
     }
 
     return programBin;

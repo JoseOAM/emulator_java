@@ -2,6 +2,7 @@ package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
 import br.faustech.gpu.FrameBuffer;
+import br.faustech.gpu.GPU;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import java.util.Arrays;
@@ -14,24 +15,8 @@ public class CPUTest {
 
     try {
       // Defining instructions in memory
-      int[] instructions = {
-              0x000017b7,
-              0x00078793,
-              0x00478793,
-              0xff0006b7,
-              0x00068693,
-              0x00001737,
-              0x00070713,
-              0x50470713,
-              0x00d7a023,
-              0x00478793,
-              0xfee79ce3,
-              0x000017b7,
-              0x00078793,
-              0x00100713,
-              0x00e7a223,
-              0x00000513,
-              0x00008067,
+      int[] instructions = {0x000017b7, 0x00078793, 0xff000737, 0x00070713, 0x00e7a223, 0x00100713,
+          0x00e7a023, 0x00000513, 0x00008067
 
 //          0b00010001110000000010000000000011,//load
 //          0b00010010000000001010000010000011,//load
@@ -101,6 +86,9 @@ public class CPUTest {
       }
       final Memory memory = new Memory(memoryAddresses, memorySize);
       final Bus bus = new Bus(new FrameBuffer(frameBufferAddresses, frameBufferSize), memory);
+      final FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
+      final GPU gpu = new GPU(new int[1], 512, 512, frameBuffer);
+      gpu.start();
 
       int position = 0;
       for (int instructionCode : instructions) {
@@ -110,14 +98,15 @@ public class CPUTest {
         position += 4;
       }
 
-      System.out.printf("Memory before execution: %s%n", Arrays.toString(memory.read(32,64)));
+      System.out.printf("Memory before execution: %s%n", Arrays.toString(memory.read(32, 64)));
 
       CPU cpu = new CPU(new int[1], bus);
       cpu.start();
 
-      while (cpu.isAlive()) {
+      while (gpu.isAlive()) {
         Thread.sleep(1500);
         cpu.interrupt();
+        gpu.interrupt();
       }
 
       System.out.printf("Memory after execution: %s%n%n", Arrays.toString(memory.read(32, 64)));
@@ -126,5 +115,6 @@ public class CPUTest {
       throw new RuntimeException(e);
     }
   }
+
 }
 

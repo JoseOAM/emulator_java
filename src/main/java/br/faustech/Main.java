@@ -45,7 +45,6 @@ public class Main {
       }
     }
 
-    System.out.println(Arrays.toString(bus.read(4096, 4130)));
     System.out.println(Arrays.toString(frameBuffer.readFromFrontBufferAsFloats(4096, 4130)));
   }
 

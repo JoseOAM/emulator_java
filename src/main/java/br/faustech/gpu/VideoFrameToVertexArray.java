@@ -102,14 +102,15 @@ public class VideoFrameToVertexArray extends Thread {
 
         int color = resizedImage.getRGB(x, y);
 
-        frameBuffer.writeToBackBufferFromFloats(8 * (y * width + x),
-            new float[]{normX, normY, ((color >> 16) & 0xFF) / 255.0f,  // r
-                ((color >> 8) & 0xFF) / 255.0f,                         // g
-                (color & 0xFF) / 255.0f,                                // b
-                ((color >> 24) & 0xFF) / 255.0f,                        // a
-                x / (float) width,                                      // u
-                y / (float) height                                      // v
-            });
+        final float[] pixel = new float[]{normX, normY, ((color >> 16) & 0xFF) / 255.0f,  // r
+            ((color >> 8) & 0xFF) / 255.0f,                         // g
+            (color & 0xFF) / 255.0f,                                // b
+            ((color >> 24) & 0xFF) / 255.0f,                        // a
+            x / (float) width,                                      // u
+            y / (float) height                                      // v
+        };
+
+        frameBuffer.writeToBackBufferFromFloats(8 * (y * width + x), pixel);
       }
     }
     frameBuffer.swap(); // Swap buffers after writing frame
