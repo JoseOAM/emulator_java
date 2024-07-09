@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import lombok.Getter;
 
 /**
@@ -64,8 +63,6 @@ public class FrameBuffer extends Component {
 
     this.writeToPixelBufferFromInts(beginDataPosition, new int[]{data});
 
-    beginDataPosition *= (int) 2.666666666666667;
-
     int width = GPU.getWidth();
     int height = GPU.getHeight();
 
@@ -84,9 +81,7 @@ public class FrameBuffer extends Component {
         y / (float) height                                     // v
     };
 
-    this.writeToBackBufferFromFloats(0, pixel);
-    this.swap();
-    System.out.println(Arrays.toString(pixel));
+    this.writeToBackBufferFromFloats(8 * (y * width + x), pixel);
   }
 
   /**

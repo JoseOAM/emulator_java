@@ -80,7 +80,7 @@ public class Bus {
     } else if (ArrayUtils.contains(memory.getAddresses(), address)) {
       return MEMORY;
     } else {
-      throw new IllegalArgumentException("Invalid component type");
+      throw new IllegalArgumentException("Invalid address");
     }
   }
 
@@ -91,16 +91,22 @@ public class Bus {
    * @param endDataPosition The end position for reading data.
    * @return The integer array read from the component.
    */
-  public int[] read(final int address, final int endDataPosition) {
+  public int[] read(int address, final int endDataPosition) {
 
     ComponentType componentType = witchComponentType(
         address); // Determine which component to read from
 
     try {
       return switch (componentType) {
-        case FRAME_BUFFER -> frameBuffer.readFromPixelBufferAsInts(address - Memory.getMemorySize(),
-            endDataPosition - Memory.getMemorySize());
-        case MEMORY -> memory.readAsInt(address, endDataPosition);
+        case FRAME_BUFFER:
+          address = address - Memory.getMemorySize() - 4;
+          if (address < 0) {
+            throw new MemoryException("Invalid address");
+          }
+          yield frameBuffer.readFromPixelBufferAsInts(address,
+              endDataPosition - Memory.getMemorySize() - 4);
+        case MEMORY:
+          yield memory.readAsInt(address, endDataPosition);
       };
     } catch (MemoryException e) {
       log.severe(e.getMessage());

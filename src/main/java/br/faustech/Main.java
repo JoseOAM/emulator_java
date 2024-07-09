@@ -9,7 +9,6 @@ import br.faustech.memory.MemoryException;
 import br.faustech.reader.ProgramUtils;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Main {
 
@@ -20,8 +19,6 @@ public class Main {
   private static GPU gpu;
 
   private static CPU cpu;
-
-  private static FrameBuffer frameBuffer;
 
   public static void main(String[] args) throws IOException, MemoryException {
 
@@ -44,19 +41,18 @@ public class Main {
         cpu.interrupt();
       }
     }
-
-    System.out.println(Arrays.toString(frameBuffer.readFromFrontBufferAsFloats(4096, 4130)));
   }
 
   private static void setup() {
 
-    int WIDTH = 800;
-    int HEIGHT = 600;
+    int WIDTH = 512;
+    int HEIGHT = 512;
     int frameBufferSize = WIDTH * HEIGHT;
     int memorySize = 4096;
 
     int[] memoryAddresses = new int[memorySize];
     int[] frameBufferAddresses = new int[frameBufferSize];
+
     for (int i = 0; i < memorySize + frameBufferSize; i++) {
       if (i < memorySize) {
         memoryAddresses[i] = i;
@@ -65,7 +61,7 @@ public class Main {
       }
     }
 
-    frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
+    FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
     Memory memory = new Memory(memoryAddresses, memorySize);
     bus = new Bus(frameBuffer, memory);
     programUtils = new ProgramUtils(bus);
