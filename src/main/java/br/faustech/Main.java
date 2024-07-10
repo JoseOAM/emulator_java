@@ -12,9 +12,9 @@ import java.io.IOException;
 
 public class Main {
 
-  private static ProgramUtils programUtils;
+  public static boolean LOG = false;
 
-  private static Bus bus;
+  private static ProgramUtils programUtils;
 
   private static GPU gpu;
 
@@ -25,12 +25,14 @@ public class Main {
 //    if (args.length < 1) {
 //      throw new IllegalArgumentException("Program file name not provided.");
 //    }
+    args = new String[1];
+    args[0] = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
 
-    String filename = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
+    LOG = args.length > 1 && args[1].equals("--log");
 
     setup();
 
-    programUtils.writeProgramInMemory(programUtils.readFile(new File(filename)));
+    programUtils.writeProgramInMemory(programUtils.readFile(new File(args[0])));
 
     gpu.start();
     cpu.start();
@@ -63,7 +65,7 @@ public class Main {
 
     FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
     Memory memory = new Memory(memoryAddresses, memorySize);
-    bus = new Bus(frameBuffer, memory);
+    Bus bus = new Bus(frameBuffer, memory);
     programUtils = new ProgramUtils(bus);
     gpu = new GPU(new int[1], WIDTH, HEIGHT, frameBuffer);
     cpu = new CPU(new int[1], bus);

@@ -1,5 +1,7 @@
 package br.faustech.cpu;
 
+import static br.faustech.Main.LOG;
+
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
@@ -201,7 +203,9 @@ public class CPU extends ComponentThread {
     // Perform the operation and store the result in register rd
     registers[rd] = operation.apply(value1, value2);
 
-    log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
+    if (LOG) {
+      log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
+    }
   }
 
   /**
@@ -225,7 +229,9 @@ public class CPU extends ComponentThread {
         break;
     }
 
-    log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
+    if (LOG) {
+      log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
+    }
   }
 
   /**
@@ -241,8 +247,10 @@ public class CPU extends ComponentThread {
     registers[rd] = programCounter;
     programCounter += imm - 4; // Adjust for the default increment
 
-    log.info(
-        String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
+    if (LOG) {
+      log.info(
+          String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
+    }
   }
 
   /**
@@ -259,8 +267,10 @@ public class CPU extends ComponentThread {
     registers[rd] = programCounter;
     programCounter = (registers[rs1] + imm) & ~1;
 
-    log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd,
-        programCounter));
+    if (LOG) {
+      log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd,
+          programCounter));
+    }
   }
 
   /**
@@ -301,9 +311,11 @@ public class CPU extends ComponentThread {
         break;
     }
 
-    log.info(
-        String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1,
-            imm, rd, address, value));
+    if (LOG) {
+      log.info(
+          String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1,
+              imm, rd, address, value));
+    }
   }
 
   /**
@@ -331,8 +343,10 @@ public class CPU extends ComponentThread {
       programCounter += imm - 4; // Adjust for the default increment
     }
 
-    log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm,
-        programCounter));
+    if (LOG) {
+      log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm,
+          programCounter));
+    }
   }
 
   /**
@@ -363,9 +377,11 @@ public class CPU extends ComponentThread {
         break;
     }
 
-    log.info(
-        String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1,
-            rs2, imm, address, registers[rs2]));
+    if (LOG) {
+      log.info(
+          String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1,
+              rs2, imm, address, registers[rs2]));
+    }
   }
 
   /**
@@ -393,7 +409,10 @@ public class CPU extends ComponentThread {
     };
 
     registers[rd] = result;
-    log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
+
+    if (LOG) {
+      log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
+    }
   }
 
   /**
@@ -452,7 +471,9 @@ public class CPU extends ComponentThread {
         break;
     }
 
-    log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
+    if (LOG) {
+      log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
+    }
   }
 
   /**
@@ -515,7 +536,10 @@ public class CPU extends ComponentThread {
    */
   private static void handleEcall() {
     // TODO
-    log.info("ECALL: Transferred control to exception handler for syscall");
+
+    if (LOG) {
+      log.info("ECALL: Transferred control to exception handler for syscall");
+    }
   }
 
   /**

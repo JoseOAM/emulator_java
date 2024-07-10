@@ -51,7 +51,7 @@ public class Bus {
           if (frameBufferAddress >= 0 && frameBufferAddress <= 3) {
             frameBuffer.swap();
           } else {
-            frameBuffer.writePixel(frameBufferAddress - 4, value[0]);
+            frameBuffer.writePixel(frameBufferAddress - 4, value);
           }
           break;
         case MEMORY:
