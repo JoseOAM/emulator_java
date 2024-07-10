@@ -58,8 +58,7 @@ public class CPU extends ComponentThread {
   public void run() {
 
     programCounter = 0;
-    // TODO: Implement the CPU execution loop
-    while (true) {
+    while (!isInterrupted()) {
       getNextInstructionInMemory();
       // System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
