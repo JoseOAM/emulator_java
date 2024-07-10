@@ -53,9 +53,9 @@ public class Main {
     int memorySize = 4096;
 
     int[] memoryAddresses = new int[memorySize];
-    int[] frameBufferAddresses = new int[frameBufferSize];
+    int[] frameBufferAddresses = new int[frameBufferSize * 4];
 
-    for (int i = 0; i < memorySize + frameBufferSize; i++) {
+    for (int i = 0; i < memorySize + frameBufferSize * 4; i++) {
       if (i < memorySize) {
         memoryAddresses[i] = i;
       } else {
