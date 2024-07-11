@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import lombok.Getter;
 
 /**
@@ -33,73 +32,76 @@ public class FrameBuffer extends Component {
     super(addresses);
     this.frontBuffer = new byte[bufferSize * 8 * 4];  // Initialize front buffer
     this.backBuffer = new byte[bufferSize * 8 * 4];   // Initialize back buffer
-    this.pixelBuffer = new byte[bufferSize];          // Initialize pixel buffer
+    this.pixelBuffer = new byte[bufferSize * 4];      // Initialize pixel buffer
     FrameBuffer.bufferSize = bufferSize;
   }
 
   /**
    * Writes data to the back buffer starting from a specified position.
    *
-   * @param beginDataPosition The starting position in the back buffer.
-   * @param data              The byte data to be written.
+   * @param beginAddress The starting position in the back buffer.
+   * @param data         The byte data to be written.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writeToBackBufferFromBytes(final int beginDataPosition, final byte[] data)
+  public void writeToBackBufferFromBytes(final int beginAddress, final byte[] data)
       throws MemoryException {
 
-    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length) {
+    if (beginAddress < 0 || beginAddress + data.length > backBuffer.length) {
       throw new MemoryException("Invalid data positions or data length.");
     }
-    System.arraycopy(data, 0, backBuffer, beginDataPosition, data.length);
+    System.arraycopy(data, 0, backBuffer, beginAddress, data.length);
   }
 
   /**
    * Writes pixel data to the back buffer starting from a specified position.
    *
-   * @param beginDataPosition The starting position in the back buffer.
-   * @param data              The pixel data as an integer.
+   * @param beginAddress The starting position in the back buffer.
+   * @param data         The pixel data as an array of integers.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writePixel(int beginDataPosition, final int data) throws MemoryException {
+  public void writePixel(int beginAddress, final int[] data) throws MemoryException {
 
-    this.writeToPixelBufferFromInts(beginDataPosition, new int[]{data});
-
-    beginDataPosition *= (int) 2.666666666666667;
+    this.writeToPixelBufferFromInts(beginAddress, data);
 
     int width = GPU.getWidth();
     int height = GPU.getHeight();
 
-    // Calculate normalized coordinates for texture mapping
-    int x = beginDataPosition % width;
-    int y = beginDataPosition / width;
+    for (int i = 0; i < data.length; i++) {
+      int color = data[i];
 
-    float normX = (x / (float) width) * 2 - 1;
-    float normY = ((height - y) / (float) height) * 2 - 1;
+      // Calculate normalized coordinates for texture mapping
+      int x = (beginAddress + i) % width;
+      int y = (beginAddress + i) / width;
 
-    final float[] pixel = new float[]{normX, normY, ((data >> 16) & 0xFF) / 255.0f,  // r
-        ((data >> 8) & 0xFF) / 255.0f,                         // g
-        (data & 0xFF) / 255.0f,                                // b
-        ((data >> 24) & 0xFF) / 255.0f,                        // a
-        x / (float) width,                                     // u
-        y / (float) height                                     // v
-    };
+      float normX = (x / (float) width) * 2 - 1;
+      float normY = ((height - y) / (float) height) * 2 - 1;
 
-    this.writeToBackBufferFromFloats(0, pixel);
-    this.swap();
-    System.out.println(Arrays.toString(pixel));
+      float r = ((color >> 16) & 0xFF) / 255.0f;
+      float g = ((color >> 8) & 0xFF) / 255.0f;
+      float b = (color & 0xFF) / 255.0f;
+      float a = ((color >> 24) & 0xFF) / 255.0f;
+      float u = x / (float) width;
+      float v = y / (float) height;
+
+      final float[] pixel = new float[]{normX, normY, r, g, b, a, u, v};
+
+      int address = 8 * (y * width + x);
+
+      this.writeToBackBufferFromFloats(address, pixel);
+    }
   }
 
   /**
    * Writes integer data to the back buffer, converting them to bytes before storing.
    *
-   * @param beginDataPosition The starting index where data is to be written.
-   * @param data              The integer data to be converted and written.
+   * @param beginAddress The starting index where data is to be written.
+   * @param data         The integer data to be converted and written.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writeToPixelBufferFromInts(final int beginDataPosition, final int[] data)
+  public void writeToPixelBufferFromInts(final int beginAddress, final int[] data)
       throws MemoryException {
 
-    if (beginDataPosition < 0 || beginDataPosition + data.length > pixelBuffer.length / 4) {
+    if (beginAddress < 0 || beginAddress + data.length > pixelBuffer.length / 4) {
       throw new MemoryException("Invalid data positions or data length.");
     }
 
@@ -108,20 +110,20 @@ public class FrameBuffer extends Component {
     intBuffer.put(data);
 
     byteBuffer.rewind();
-    byteBuffer.get(pixelBuffer, beginDataPosition * 4, byteBuffer.remaining());
+    byteBuffer.get(pixelBuffer, beginAddress * 4, byteBuffer.remaining());
   }
 
   /**
    * Writes float data to the back buffer, converting them to bytes before storing.
    *
-   * @param beginDataPosition The starting index where data is to be written.
-   * @param data              The float data to be converted and written.
+   * @param beginAddress The starting index where data is to be written.
+   * @param data         The float data to be converted and written.
    * @throws MemoryException If the write operation exceeds buffer limits.
    */
-  public void writeToBackBufferFromFloats(final int beginDataPosition, final float[] data)
+  public void writeToBackBufferFromFloats(final int beginAddress, final float[] data)
       throws MemoryException {
 
-    if (beginDataPosition < 0 || beginDataPosition + data.length > backBuffer.length / 4) {
+    if (beginAddress < 0 || beginAddress + data.length > backBuffer.length / 4) {
       throw new MemoryException("Invalid data positions or data length.");
     }
 
@@ -130,7 +132,7 @@ public class FrameBuffer extends Component {
     floatBuffer.put(data);
 
     byteBuffer.rewind();
-    byteBuffer.get(backBuffer, beginDataPosition * 4, byteBuffer.remaining());
+    byteBuffer.get(backBuffer, beginAddress * 4, byteBuffer.remaining());
   }
 
   /**
@@ -146,21 +148,20 @@ public class FrameBuffer extends Component {
   /**
    * Reads a segment of the front buffer as byte data.
    *
-   * @param beginDataPosition The starting index in the buffer.
-   * @param endDataPosition   The ending index in the buffer.
+   * @param beginAddress The starting index in the buffer.
+   * @param endAddress   The ending index in the buffer.
    * @return An array of bytes read from the buffer.
    */
-  public byte[] readFromFrontBufferAsBytes(final int beginDataPosition, final int endDataPosition) {
+  public byte[] readFromFrontBufferAsBytes(final int beginAddress, final int endAddress) {
 
-    if (beginDataPosition < 0 || endDataPosition > frontBuffer.length
-        || beginDataPosition >= endDataPosition) {
+    if (beginAddress < 0 || endAddress > frontBuffer.length || beginAddress >= endAddress) {
       throw new IllegalArgumentException("Invalid data positions.");
     }
 
-    int length = endDataPosition - beginDataPosition;
+    int length = endAddress - beginAddress;
     byte[] result = new byte[length];
 
-    System.arraycopy(frontBuffer, beginDataPosition, result, 0, length);
+    System.arraycopy(frontBuffer, beginAddress, result, 0, length);
 
     return result;
   }
@@ -168,18 +169,17 @@ public class FrameBuffer extends Component {
   /**
    * Reads a segment of the front buffer as float data.
    *
-   * @param beginDataPosition The starting index in the buffer.
-   * @param endDataPosition   The ending index in the buffer.
+   * @param beginAddress The starting index in the buffer.
+   * @param endAddress   The ending index in the buffer.
    * @return An array of floats read from the buffer.
    * @throws MemoryException If invalid data positions are used.
    */
-  public float[] readFromFrontBufferAsFloats(final int beginDataPosition, final int endDataPosition)
+  public float[] readFromFrontBufferAsFloats(final int beginAddress, final int endAddress)
       throws MemoryException {
 
-    int length = endDataPosition - beginDataPosition;
+    int length = endAddress - beginAddress;
 
-    final ByteBuffer byteBuffer = getByteBufferFromBuffer(frontBuffer, beginDataPosition,
-        endDataPosition);
+    final ByteBuffer byteBuffer = getByteBufferFromBuffer(frontBuffer, beginAddress, endAddress);
 
     FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
     float[] floatArray = new float[length];
@@ -191,41 +191,39 @@ public class FrameBuffer extends Component {
   /**
    * Retrieves a ByteBuffer from the given buffer with specified start and end positions.
    *
-   * @param buffer            The byte array buffer.
-   * @param beginDataPosition The starting index in the buffer.
-   * @param endDataPosition   The ending index in the buffer.
+   * @param buffer       The byte array buffer.
+   * @param beginAddress The starting index in the buffer.
+   * @param endAddress   The ending index in the buffer.
    * @return A ByteBuffer positioned at the specified data range.
    * @throws MemoryException If invalid data positions are used.
    */
-  private ByteBuffer getByteBufferFromBuffer(final byte[] buffer, final int beginDataPosition,
-      final int endDataPosition) throws MemoryException {
+  private ByteBuffer getByteBufferFromBuffer(final byte[] buffer, final int beginAddress,
+      final int endAddress) throws MemoryException {
 
-    if (beginDataPosition < 0 || endDataPosition > buffer.length / 4
-        || beginDataPosition >= endDataPosition) {
+    if (beginAddress < 0 || endAddress > buffer.length / 4 || beginAddress >= endAddress) {
       throw new MemoryException("Invalid data positions.");
     }
 
     ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
     byteBuffer.order(ByteOrder.nativeOrder());
-    byteBuffer.position(beginDataPosition * 4);
+    byteBuffer.position(beginAddress * 4);
     return byteBuffer;
   }
 
   /**
    * Reads a segment of the front buffer as integer data.
    *
-   * @param beginDataPosition The starting index in the buffer.
-   * @param endDataPosition   The ending index in the buffer.
+   * @param beginAddress The starting index in the buffer.
+   * @param endAddress   The ending index in the buffer.
    * @return An array of integers read from the buffer.
    * @throws MemoryException If invalid data positions are used.
    */
-  public int[] readFromPixelBufferAsInts(final int beginDataPosition, final int endDataPosition)
+  public int[] readFromPixelBufferAsInts(final int beginAddress, final int endAddress)
       throws MemoryException {
 
-    int length = endDataPosition - beginDataPosition;
+    int length = endAddress - beginAddress;
 
-    final ByteBuffer byteBuffer = getByteBufferFromBuffer(pixelBuffer, beginDataPosition,
-        endDataPosition);
+    final ByteBuffer byteBuffer = getByteBufferFromBuffer(pixelBuffer, beginAddress, endAddress);
 
     IntBuffer intBuffer = byteBuffer.asIntBuffer();
     int[] intArray = new int[length];
