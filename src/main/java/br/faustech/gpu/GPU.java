@@ -69,9 +69,7 @@ public class GPU extends ComponentThread {
     window = new Window(width, height, "Emulator");
     window.init();
     window.setResizeCallback((ignore, newWidth, newHeight) -> {
-      width = newWidth;
-      height = newHeight;
-      GL46.glViewport(0, 0, width, height);
+      GL46.glViewport(0, 0, newWidth, newHeight);
     });
 
     shaderProgram = new ShaderProgram();

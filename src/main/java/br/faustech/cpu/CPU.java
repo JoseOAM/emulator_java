@@ -6,7 +6,6 @@ import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
 import java.util.function.BiFunction;
-import lombok.Getter;
 import lombok.extern.java.Log;
 
 /**
@@ -17,13 +16,13 @@ import lombok.extern.java.Log;
 @Log
 public class CPU extends ComponentThread {
 
-  @Getter private static final int[] registers = new int[32]; // 32 general-purpose registers
+  private final int[] registers = new int[32]; // 32 general-purpose registers
 
-  private static final int[] csrRegisters = new int[4096]; // CSR registers
+  private final int[] csrRegisters = new int[4096]; // CSR registers
 
-  @Getter private static int programCounter;
+  private final Bus bus;
 
-  private static Bus bus;
+  private int programCounter = 0;
 
   /**
    * Constructor for the CPU class.
@@ -34,15 +33,14 @@ public class CPU extends ComponentThread {
   public CPU(final int[] addresses, final Bus bus) {
 
     super(addresses);
-    programCounter = 0;
-    CPU.bus = bus;
+    this.bus = bus;
     initializeRegisters();
   }
 
   /**
    * Initializes the CPU registers with predefined values.
    */
-  public static void initializeRegisters() {
+  public void initializeRegisters() {
     // Stack Pointer (sp) to the top of the memory
     registers[2] = 4092;
     // Global Pointer (gp) to some midpoint in memory, e.g., for global data
@@ -59,17 +57,15 @@ public class CPU extends ComponentThread {
   @Override
   public void run() {
 
-    programCounter = 0;
     while (!isInterrupted()) {
       getNextInstructionInMemory();
-      // System.out.println(getProgramCounter() + " ------------ " + Arrays.toString(getRegisters()));
     }
   }
 
   /**
    * Fetches the next instruction from memory and executes it.
    */
-  public static void getNextInstructionInMemory() {
+  public void getNextInstructionInMemory() {
     // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
     try {
       int instruction = bus.read(programCounter, programCounter + 4)[0];
@@ -85,7 +81,7 @@ public class CPU extends ComponentThread {
    * @param instruction the instruction to be executed
    * @throws MemoryException if there is an error accessing memory
    */
-  public static void executeInstruction(int instruction) throws MemoryException {
+  public void executeInstruction(int instruction) throws MemoryException {
 
     String decodedInstruction = Decoder.decodeInstruction(instruction);
     // Parse the decoded instruction
@@ -189,8 +185,7 @@ public class CPU extends ComponentThread {
    * @param parts     the instruction parts
    * @param operation the operation to be performed
    */
-  private static void executeRType(String[] parts,
-      BiFunction<Integer, Integer, Integer> operation) {
+  private void executeRType(String[] parts, BiFunction<Integer, Integer, Integer> operation) {
 
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
@@ -213,7 +208,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeUType(String[] parts) {
+  private void executeUType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2) << 12;
@@ -239,7 +234,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeJType(String[] parts) {
+  private void executeJType(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int imm = getImmediateValue(parts, 2);
@@ -258,7 +253,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeITypeJumpAndLinkRegister(String[] parts) {
+  private void executeITypeJumpAndLinkRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
@@ -279,7 +274,7 @@ public class CPU extends ComponentThread {
    * @param parts the instruction parts
    * @throws MemoryException if there is an error accessing memory
    */
-  private static void executeITypeLoad(String[] parts) throws MemoryException {
+  private void executeITypeLoad(String[] parts) throws MemoryException {
 
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
@@ -323,7 +318,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeBType(String[] parts) {
+  private void executeBType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
     int rs2 = getRegisterIndex(parts, 2);
@@ -354,7 +349,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeSType(String[] parts) {
+  private void executeSType(String[] parts) {
 
     int rs1 = getRegisterIndex(parts, 1);
     int rs2 = getRegisterIndex(parts, 2);
@@ -389,7 +384,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeITypeImmediate(String[] parts) {
+  private void executeITypeImmediate(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
@@ -437,7 +432,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeITypeControlStatusRegister(String[] parts) {
+  private void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
     int rs1 = getRegisterIndex(parts, 2);
