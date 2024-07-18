@@ -16,7 +16,7 @@ public class Main {
 
   private static final int HEIGHT = 512;
 
-  private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4 * 8;
+  private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4;
 
   private static final int MEMORY_SIZE = 4096;
 
@@ -36,7 +36,7 @@ public class Main {
     args = new String[1];
     args[0] = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
 
-    LOG = args.length > 1 && args[1].equals("--log");
+    LOG = true;
 
     setup();
 

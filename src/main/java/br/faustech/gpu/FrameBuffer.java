@@ -32,9 +32,10 @@ public class FrameBuffer extends Component {
   public FrameBuffer(final int[] addresses, int bufferSize) {
 
     super(addresses);
+    this.pixelBuffer = new byte[bufferSize];  // Initialize pixel buffer
+    bufferSize *= 8;
     this.frontBuffer = new byte[bufferSize];  // Initialize front buffer
     this.backBuffer = new byte[bufferSize];   // Initialize back buffer
-    this.pixelBuffer = new byte[bufferSize];  // Initialize pixel buffer
     FrameBuffer.bufferSize = bufferSize;
   }
 
