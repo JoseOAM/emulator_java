@@ -12,6 +12,7 @@ public class Decoder {
    * @return A string representation of the decoded instruction.
    */
   public static String decodeInstruction(int instruction) {
+
     int opcode = instruction & 0x7F; // Extract the 7-bit opcode
 
     return switch (opcode) {
@@ -35,6 +36,7 @@ public class Decoder {
    * @return A string representation of the R-Type instruction.
    */
   private static String decodeRType(int instruction) {
+
     int funct3 = (instruction >> 12) & 0x7;
     int funct7 = (instruction >> 25) & 0x7F;
     int rd = (instruction >> 7) & 0x1F;
@@ -57,12 +59,116 @@ public class Decoder {
   }
 
   /**
+   * Decodes an I-Type instruction for Jump and Link Register.
+   *
+   * @param instruction The 32-bit instruction to decode.
+   * @return A string representation of the I-Type jalr instruction.
+   */
+  private static String decodeITypeJumpAndLinkRegister(int instruction) {
+
+    int imm = instruction >> 20;
+    int rs1 = (instruction >> 15) & 0x1F;
+    int rd = (instruction >> 7) & 0x1F;
+
+    return String.format("jalr rd=%d, rs1=%d, imm=%d", rd, rs1, imm);
+  }
+
+  /**
+   * Decodes an I-Type instruction for Loads.
+   *
+   * @param instruction The 32-bit instruction to decode.
+   * @return A string representation of the I-Type load instruction.
+   */
+  private static String decodeITypeLoad(int instruction) {
+
+    int imm = instruction >> 20;
+    int rs1 = (instruction >> 15) & 0x1F;
+    int funct3 = (instruction >> 12) & 0x7;
+    int rd = (instruction >> 7) & 0x1F;
+
+    String operation = switch (funct3) {
+      case 0b000 -> "lb";
+      case 0b001 -> "lh";
+      case 0b010 -> "lw";
+      case 0b100 -> "lbu";
+      case 0b101 -> "lhu";
+      default -> "unknown";
+    };
+
+    return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
+  }
+
+  /**
+   * Decodes an I-Type instruction for Immediates.
+   *
+   * @param instruction The 32-bit instruction to decode.
+   * @return A string representation of the I-Type immediate instruction.
+   */
+  private static String decodeITypeImmediate(int instruction) {
+
+    int imm = instruction >> 20;
+    int rs1 = (instruction >> 15) & 0x1F;
+    int funct3 = (instruction >> 12) & 0x7;
+    int rd = (instruction >> 7) & 0x1F;
+
+    String operation = switch (funct3) {
+      case 0b000 -> "addi";
+      case 0b010 -> "slti";
+      case 0b011 -> "sltiu";
+      case 0b100 -> "xori";
+      case 0b110 -> "ori";
+      case 0b111 -> "andi";
+      case 0b001 -> {
+        imm &= 0x1F;
+        yield String.format("slli rd=%d, rs1=%d, shamt=%d", rd, rs1, imm);
+      }
+      case 0b101 -> {
+        String op = (imm & 0xFE0) == 0 ? "srli" : "srai";
+        imm &= 0x1F;
+        yield String.format("%s rd=%d, rs1=%d, shamt=%d", op, rd, rs1, imm);
+      }
+      default -> "unknown";
+    };
+
+    return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
+  }
+
+  /**
+   * Decodes an I-Type instruction for Control Status Register Atomic Operations.
+   *
+   * @param instruction The 32-bit instruction to decode.
+   * @return A string representation of the I-Type CSR instruction.
+   */
+  private static String decodeITypeControlStatusRegister(int instruction) {
+
+    int csr = instruction >> 20;
+    int rs1_or_zimm = (instruction >> 15) & 0x1F;
+    int funct3 = (instruction >> 12) & 0x7;
+    int rd = (instruction >> 7) & 0x1F;
+
+    String operation = switch (funct3) {
+      case 0b000 -> (csr == 0) ? "ecall" : "ebreak";
+      case 0b001 -> "csrrw";
+      case 0b010 -> "csrrs";
+      case 0b011 -> "csrrc";
+      case 0b101 -> "csrrwi";
+      case 0b110 -> "csrrsi";
+      case 0b111 -> "csrrci";
+      default -> "unknown";
+    };
+
+    return (funct3 == 0b000) ? operation
+        : String.format("%s rd=%d, csr=%d, rs1_or_zimm=%d", operation, rd, csr, rs1_or_zimm);
+  }
+
+  /**
    * Decodes an S-Type instruction.
    *
    * @param instruction The 32-bit instruction to decode.
    * @return A string representation of the S-Type instruction.
    */
   private static String decodeSType(int instruction) {
+
     int imm11_5 = (instruction >> 25) & 0x7F;
     int rs2 = (instruction >> 20) & 0x1F;
     int rs1 = (instruction >> 15) & 0x1F;
@@ -87,6 +193,7 @@ public class Decoder {
    * @return A string representation of the B-Type instruction.
    */
   private static String decodeBType(int instruction) {
+
     int imm12 = (instruction >> 31) & 0x1;
     int imm10_5 = (instruction >> 25) & 0x3F;
     int rs2 = (instruction >> 20) & 0x1F;
@@ -116,6 +223,7 @@ public class Decoder {
    * @return A string representation of the U-Type instruction.
    */
   private static String decodeUType(int instruction) {
+
     int imm31_12 = instruction >> 12;
     int rd = (instruction >> 7) & 0x1F;
     int opcode = instruction & 0x7F;
@@ -136,6 +244,7 @@ public class Decoder {
    * @return A string representation of the J-Type instruction.
    */
   private static String decodeJType(int instruction) {
+
     int imm20 = (instruction >> 31) & 0x1;
     int imm10_1 = (instruction >> 21) & 0x3FF;
     int imm11 = (instruction >> 20) & 0x1;
@@ -146,102 +255,4 @@ public class Decoder {
     return String.format("jal rd=%d, imm=%d", rd, imm);
   }
 
-  /**
-   * Decodes an I-Type instruction for Jump and Link Register.
-   *
-   * @param instruction The 32-bit instruction to decode.
-   * @return A string representation of the I-Type jalr instruction.
-   */
-  private static String decodeITypeJumpAndLinkRegister(int instruction) {
-    int imm = instruction >> 20;
-    int rs1 = (instruction >> 15) & 0x1F;
-    int rd = (instruction >> 7) & 0x1F;
-
-    return String.format("jalr rd=%d, rs1=%d, imm=%d", rd, rs1, imm);
-  }
-
-  /**
-   * Decodes an I-Type instruction for Immediates.
-   *
-   * @param instruction The 32-bit instruction to decode.
-   * @return A string representation of the I-Type immediate instruction.
-   */
-  private static String decodeITypeImmediate(int instruction) {
-    int imm = instruction >> 20;
-    int rs1 = (instruction >> 15) & 0x1F;
-    int funct3 = (instruction >> 12) & 0x7;
-    int rd = (instruction >> 7) & 0x1F;
-
-    String operation = switch (funct3) {
-      case 0b000 -> "addi";
-      case 0b010 -> "slti";
-      case 0b011 -> "sltiu";
-      case 0b100 -> "xori";
-      case 0b110 -> "ori";
-      case 0b111 -> "andi";
-      case 0b001 -> {
-        imm &= 0x1F;
-        yield String.format("slli rd=%d, rs1=%d, shamt=%d", rd, rs1, imm);
-      }
-      case 0b101 -> {
-        String op = (imm & 0xFE0) == 0 ? "srli" : "srai";
-        imm &= 0x1F;
-        yield String.format("%s rd=%d, rs1=%d, shamt=%d", op, rd, rs1, imm);
-      }
-      default -> "unknown";
-    };
-
-    return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
-  }
-
-  /**
-   * Decodes an I-Type instruction for Loads.
-   *
-   * @param instruction The 32-bit instruction to decode.
-   * @return A string representation of the I-Type load instruction.
-   */
-  private static String decodeITypeLoad(int instruction) {
-    int imm = instruction >> 20;
-    int rs1 = (instruction >> 15) & 0x1F;
-    int funct3 = (instruction >> 12) & 0x7;
-    int rd = (instruction >> 7) & 0x1F;
-
-    String operation = switch (funct3) {
-      case 0b000 -> "lb";
-      case 0b001 -> "lh";
-      case 0b010 -> "lw";
-      case 0b100 -> "lbu";
-      case 0b101 -> "lhu";
-      default -> "unknown";
-    };
-
-    return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
-  }
-
-  /**
-   * Decodes an I-Type instruction for Control Status Register Atomic Operations.
-   *
-   * @param instruction The 32-bit instruction to decode.
-   * @return A string representation of the I-Type CSR instruction.
-   */
-  private static String decodeITypeControlStatusRegister(int instruction) {
-    int csr = instruction >> 20;
-    int rs1_or_zimm = (instruction >> 15) & 0x1F;
-    int funct3 = (instruction >> 12) & 0x7;
-    int rd = (instruction >> 7) & 0x1F;
-
-    String operation = switch (funct3) {
-      case 0b000 -> (csr == 0) ? "ecall" : "ebreak";
-      case 0b001 -> "csrrw";
-      case 0b010 -> "csrrs";
-      case 0b011 -> "csrrc";
-      case 0b101 -> "csrrwi";
-      case 0b110 -> "csrrsi";
-      case 0b111 -> "csrrci";
-      default -> "unknown";
-    };
-
-    return (funct3 == 0b000) ? operation
-        : String.format("%s rd=%d, csr=%d, rs1_or_zimm=%d", operation, rd, csr, rs1_or_zimm);
-  }
 }

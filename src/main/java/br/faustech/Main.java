@@ -12,6 +12,14 @@ import java.io.IOException;
 
 public class Main {
 
+  private static final int WIDTH = 512;
+
+  private static final int HEIGHT = 512;
+
+  private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4 * 8;
+
+  private static final int MEMORY_SIZE = 4096;
+
   public static boolean LOG = false;
 
   private static ProgramUtils programUtils;
@@ -47,25 +55,20 @@ public class Main {
 
   private static void setup() {
 
-    int WIDTH = 512;
-    int HEIGHT = 512;
-    int frameBufferSize = WIDTH * HEIGHT;
-    int memorySize = 4096;
+    int[] memoryAddresses = new int[MEMORY_SIZE];
+    int[] frameBufferAddresses = new int[FRAME_BUFFER_SIZE];
 
-    int[] memoryAddresses = new int[memorySize];
-    int[] frameBufferAddresses = new int[frameBufferSize * 4];
-
-    for (int i = 0; i < memorySize + frameBufferSize * 4; i++) {
-      if (i < memorySize) {
+    for (int i = 0; i < MEMORY_SIZE + FRAME_BUFFER_SIZE; i++) {
+      if (i < MEMORY_SIZE) {
         memoryAddresses[i] = i;
       } else {
-        frameBufferAddresses[i - memorySize] = i;
+        frameBufferAddresses[i - MEMORY_SIZE] = i;
       }
     }
 
-    FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
-    Memory memory = new Memory(memoryAddresses, memorySize);
-    Bus bus = new Bus(frameBuffer, memory);
+    final FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, FRAME_BUFFER_SIZE);
+    final Memory memory = new Memory(memoryAddresses, MEMORY_SIZE);
+    final Bus bus = new Bus(frameBuffer, memory);
     programUtils = new ProgramUtils(bus);
     gpu = new GPU(new int[1], WIDTH, HEIGHT, frameBuffer);
     cpu = new CPU(new int[1], bus);

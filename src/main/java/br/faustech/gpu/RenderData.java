@@ -119,7 +119,7 @@ public class RenderData {
     nextPboIndex = (nextPboIndex + 1) % pboCount; // Cycle through PBOs
 
     GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboId);
-    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, (long) width * height * 4 * Float.BYTES,
+    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, FrameBuffer.getBufferSize(),
         GL46.GL_STREAM_DRAW);
     FloatBuffer pboBuffer = Objects.requireNonNull(
         GL46.glMapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, GL46.GL_WRITE_ONLY)).asFloatBuffer();
@@ -150,7 +150,7 @@ public class RenderData {
     shaderProgram.use(); // Use the shader program
     GL46.glBindVertexArray(vao);
     GL46.glPointSize(4.0f);
-    GL46.glDrawArrays(GL46.GL_PATCHES, 0, numVertices);
+    GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
 
   }
 
