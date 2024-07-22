@@ -120,7 +120,7 @@ public class RenderData {
             GL46.GL_MAP_WRITE_BIT | GL46.GL_MAP_INVALIDATE_BUFFER_BIT)).asFloatBuffer();
 
     // Extract the pixel data from the vertices
-    for (int i = 2; i < numVertices; i += 8) {
+    for (int i = 2; i < vertices.length; i += 8) {
       pboBuffer.put(vertices, i, 4);
     }
 
