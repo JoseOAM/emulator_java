@@ -6,14 +6,14 @@ import org.junit.jupiter.api.Test;
 
 public class GPUTest {
 
-  private static final String VIDEO_PATH = "C:\\Users\\ffsga\\Downloads\\video2.mp4";
+  private static final String VIDEO_PATH = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\teste.mp4";
 
   @Test
   public void gpuTest() {
 
     int WIDTH = 512;
     int HEIGHT = 512;
-    int frameBufferSize = WIDTH * HEIGHT * 8 * 4;
+    int frameBufferSize = WIDTH * HEIGHT * 4;
 
     int[] frameBufferAddresses = new int[frameBufferSize];
     for (int i = 0; i < frameBufferSize; i++) {
