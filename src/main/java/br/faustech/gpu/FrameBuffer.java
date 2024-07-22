@@ -246,11 +246,11 @@ public class FrameBuffer extends Component {
   }
 
   /**
-   * Reads a segment of the front buffer as integer data.
+   * Reads a segment of the front buffer as float data.
    *
    * @param beginAddress The starting index in the buffer.
    * @param endAddress   The ending index in the buffer.
-   * @return An array of integers read from the buffer.
+   * @return An array of floats read from the buffer.
    * @throws MemoryException If invalid data positions are used.
    */
   public float[] readFromPixelBufferAsFloats(final int beginAddress, final int endAddress)

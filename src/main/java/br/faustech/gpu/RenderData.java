@@ -143,8 +143,6 @@ public class RenderData {
     GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
 
     GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
-    GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
-
   }
 
   /**
