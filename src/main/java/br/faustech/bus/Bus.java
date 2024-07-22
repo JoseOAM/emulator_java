@@ -62,7 +62,6 @@ public class Bus {
           throw new IllegalArgumentException("Invalid component type");
       }
     } catch (Exception e) {
-      log.severe(e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
   }

@@ -1,8 +1,6 @@
 package br.faustech.gpu;
 
 import java.nio.FloatBuffer;
-import java.util.Objects;
-import lombok.Setter;
 import lombok.extern.java.Log;
 import org.lwjgl.opengl.GL46;
 
@@ -24,8 +22,6 @@ public class RenderData {
 
   private int nextPboIndex = 0; // Index of the next PBO to use
 
-  @Setter private boolean firstDraw = true; // Flag to indicate the first draw
-
   /**
    * Constructs a RenderData instance with specified texture dimensions.
    *
@@ -36,6 +32,30 @@ public class RenderData {
 
     this.width = width;
     this.height = height;
+  }
+
+  /**
+   * Maps the input array to colors by extracting the color data and discarding the position and UV
+   *
+   * @param input the input
+   * @return the float [ ]
+   */
+  public static float[] mapToColors(float[] input) {
+
+    if (input.length % 8 != 0) {
+      throw new IllegalArgumentException("Input array length must be a multiple of 8.");
+    }
+
+    float[] output = new float[FrameBuffer.getBufferSize()];
+
+    for (int i = 0, j = 0; i < input.length; i += 8, j += 4) {
+      output[j] = input[i + 2];     // r
+      output[j + 1] = input[i + 3]; // g
+      output[j + 2] = input[i + 4]; // b
+      output[j + 3] = input[i + 5]; // a
+    }
+
+    return output;
   }
 
   /**
@@ -102,39 +122,29 @@ public class RenderData {
   /**
    * Draws the vertex data and updates the texture.
    *
-   * @param vertices an array of vertex data including position, color, and texture coordinates
+   * @param vertex an array of vertex data including position, color, and texture coordinates
    */
-  public void draw(float[] vertices) {
+  public void draw(float[] vertex) {
     // Update the VBO with new data
     GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertices, GL46.GL_STREAM_DRAW);
+    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertex, GL46.GL_STREAM_DRAW);
 
     int pboId = pboIds[nextPboIndex];
     nextPboIndex = (nextPboIndex + 1) % pboIds.length;
 
     GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboId);
-    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, bufferSize, GL46.GL_STREAM_DRAW);
-
-    FloatBuffer pboBuffer = Objects.requireNonNull(
-        GL46.glMapBufferRange(GL46.GL_PIXEL_UNPACK_BUFFER, 0, bufferSize,
-            GL46.GL_MAP_WRITE_BIT | GL46.GL_MAP_INVALIDATE_BUFFER_BIT)).asFloatBuffer();
-
-    // Extract the pixel data from the vertices
-    for (int i = 2; i < vertices.length; i += 8) {
-      pboBuffer.put(vertices, i, 4);
-    }
+    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, vertex, GL46.GL_STREAM_DRAW);
 
     GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
 
     GL46.glTexSubImage2D(GL46.GL_TEXTURE_2D, 0, 0, 0, width, height, GL46.GL_RGBA, GL46.GL_FLOAT,
         0);
 
-    if (firstDraw) {
-      firstDraw = false;
-      GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
-    }
+    GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
 
     GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
+    GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
+
   }
 
   /**

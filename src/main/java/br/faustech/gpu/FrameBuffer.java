@@ -32,10 +32,9 @@ public class FrameBuffer extends Component {
   public FrameBuffer(final int[] addresses, int bufferSize) {
 
     super(addresses);
-    this.pixelBuffer = new byte[bufferSize];  // Initialize pixel buffer
-    bufferSize *= 8;
-    this.frontBuffer = new byte[bufferSize];  // Initialize front buffer
-    this.backBuffer = new byte[bufferSize];   // Initialize back buffer
+    this.pixelBuffer = new byte[bufferSize * 4];  // Initialize pixel buffer
+    this.frontBuffer = new byte[bufferSize * 8];  // Initialize front buffer
+    this.backBuffer = new byte[bufferSize * 8];   // Initialize back buffer
     FrameBuffer.bufferSize = bufferSize;
   }
 
@@ -67,37 +66,30 @@ public class FrameBuffer extends Component {
    */
   public void writePixel(int beginAddress, final int[] data) throws MemoryException {
 
-    try {
-      this.writeToPixelBufferFromInts(beginAddress, data);
+    this.writeToPixelBufferFromInts(beginAddress, data);
 
-      int width = GPU.getWidth();
-      int height = GPU.getHeight();
+    int width = GPU.getWidth();
+    int height = GPU.getHeight();
 
-      for (int i = 0; i < data.length; i++) {
-        int color = data[i];
+    for (int i = 0; i < data.length; i++) {
+      int color = data[i];
 
-        // Calculate normalized coordinates for texture mapping
-        int x = (beginAddress + i) % width;
-        int y = (beginAddress + i) / width;
+      // Calculate normalized coordinates for texture mapping
+      int x = (beginAddress + i) % width;
+      int y = (beginAddress + i) / width;
 
-        float normX = (x / (float) width) * 2 - 1;
-        float normY = ((height - y) / (float) height) * 2 - 1;
+      float normX = (x / (float) width) * 2 - 1;
+      float normY = ((height - y) / (float) height) * 2 - 1;
 
-        float r = ((color >> 16) & 0xFF) / 255.0f;
-        float g = ((color >> 8) & 0xFF) / 255.0f;
-        float b = (color & 0xFF) / 255.0f;
-        float a = 1;
-        float u = x / (float) width;
-        float v = y / (float) height;
+      float r = ((color >> 16) & 0xFF) / 255.0f;
+      float g = ((color >> 8) & 0xFF) / 255.0f;
+      float b = (color & 0xFF) / 255.0f;
+      float u = x / (float) width;
+      float v = y / (float) height;
 
-        final float[] pixel = new float[]{normX, normY, r, g, b, a, u, v};
+      final float[] pixel = new float[]{normX, normY, r, g, b, 1, u, v};
 
-        int address = 8 * (y * width + x);
-
-        this.writeToBackBufferFromFloats(address, pixel);
-      }
-    } catch (Exception e) {
-      log.severe(e.getMessage());
+      this.writeToBackBufferFromFloats(8 * (y * width + x), pixel);
     }
   }
 
@@ -251,6 +243,28 @@ public class FrameBuffer extends Component {
     intBuffer.get(intArray, 0, length);
 
     return intArray;
+  }
+
+  /**
+   * Reads a segment of the front buffer as integer data.
+   *
+   * @param beginAddress The starting index in the buffer.
+   * @param endAddress   The ending index in the buffer.
+   * @return An array of integers read from the buffer.
+   * @throws MemoryException If invalid data positions are used.
+   */
+  public float[] readFromPixelBufferAsFloats(final int beginAddress, final int endAddress)
+      throws MemoryException {
+
+    int length = endAddress - beginAddress;
+
+    final ByteBuffer byteBuffer = getByteBufferFromBuffer(pixelBuffer, beginAddress, endAddress);
+
+    FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
+    float[] floatArray = new float[length];
+    floatBuffer.get(floatArray, 0, length);
+
+    return floatArray;
   }
 
 }
