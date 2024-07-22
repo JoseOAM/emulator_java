@@ -2,6 +2,7 @@ package br.faustech.gpu;
 
 import java.nio.FloatBuffer;
 import java.util.Objects;
+import lombok.Setter;
 import lombok.extern.java.Log;
 import org.lwjgl.opengl.GL46;
 
@@ -13,23 +14,23 @@ public class RenderData {
 
   private final int width, height; // Dimensions for the texture
 
-  private final int pboCount = 2; // Number of Pixel Buffer Objects for efficient texture streaming
+  private final int bufferSize = FrameBuffer.getBufferSize(); // Size of the buffer
 
-  private int vao, vbo, textureId; // OpenGL identifiers for Vertex Array, Vertex Buffer, and Texture
+  private final int numVertices = bufferSize / 8; // Number of vertices to draw
 
-  private int numVertices; // Number of vertices to be drawn
+  private int vao, vbo, textureId; // OpenGL object identifiers
 
-  private int[] pboIds; // Stores identifiers for Pixel Buffer Objects
+  private int[] pboIds; // Array of Pixel Buffer Object identifiers
 
-  private int nextPboIndex = 0; // Index to track the next PBO to use for rendering
+  private int nextPboIndex = 0; // Index of the next PBO to use
 
-  private ShaderProgram shaderProgram; // Shader program for rendering
+  @Setter private boolean firstDraw = true; // Flag to indicate the first draw
 
   /**
-   * Constructor for RenderData specifying dimensions for the rendering texture.
+   * Constructs a RenderData instance with specified texture dimensions.
    *
-   * @param width  Width of the texture.
-   * @param height Height of the texture.
+   * @param width  the width of the texture
+   * @param height the height of the texture
    */
   public RenderData(final int width, final int height) {
 
@@ -38,27 +39,43 @@ public class RenderData {
   }
 
   /**
-   * Initializes OpenGL objects including textures, buffers, array objects, and shaders.
+   * Sets up OpenGL settings and initializes textures, buffers, and array objects.
    */
   public void setup() {
 
     GL46.glEnable(GL46.GL_TEXTURE_2D);
-    GL46.glPixelStorei(GL46.GL_UNPACK_ALIGNMENT, 1);
+    GL46.glPixelStorei(GL46.GL_UNPACK_ALIGNMENT, 4);
+    setupTexture();
+    setupVAOAndVBO();
+    setupPBOs();
+    GL46.glPointSize(4.0f);
+  }
 
-    // Initialize the shader program
-    shaderProgram = new ShaderProgram();
-    shaderProgram.loadShaders();
+  /**
+   * Initializes the texture settings and allocates texture memory.
+   */
+  private void setupTexture() {
 
-    // Setup and bind the Vertex Array Object (VAO)
+    textureId = GL46.glGenTextures();
+    GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_REPEAT);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_REPEAT);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
+    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
+    GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA,
+        GL46.GL_FLOAT, (FloatBuffer) null);
+  }
+
+  /**
+   * Sets up the Vertex Array Object (VAO) and Vertex Buffer Object (VBO).
+   */
+  private void setupVAOAndVBO() {
+
     vao = GL46.glGenVertexArrays();
     GL46.glBindVertexArray(vao);
-
-    // Create and bind the Vertex Buffer Object (VBO)
     vbo = GL46.glGenBuffers();
     GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-    GL46.glBufferData(GL46.GL_ARRAY_BUFFER, 0, GL46.GL_STREAM_DRAW); // Allocate an empty buffer
 
-    // Configure vertex attributes for position, color, and texture coordinates
     int stride = 8 * Float.BYTES;
     GL46.glVertexAttribPointer(0, 2, GL46.GL_FLOAT, false, stride, 0);
     GL46.glEnableVertexAttribArray(0);
@@ -66,96 +83,62 @@ public class RenderData {
     GL46.glEnableVertexAttribArray(1);
     GL46.glVertexAttribPointer(2, 2, GL46.GL_FLOAT, false, stride, 6 * Float.BYTES);
     GL46.glEnableVertexAttribArray(2);
+  }
 
-    // Unbind the buffer and array
-    GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, 0);
-    GL46.glBindVertexArray(0);
+  /**
+   * Sets up the Pixel Buffer Objects (PBOs) for efficient texture streaming.
+   */
+  private void setupPBOs() {
 
-    // Create and configure the texture
-    textureId = GL46.glGenTextures();
-    GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
-
-    // Set texture parameters for wrapping
-    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_REPEAT);
-    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_REPEAT);
-
-    // Set texture parameters for filtering
-    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER,
-        GL46.GL_NEAREST_MIPMAP_NEAREST);
-    GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
-
-    // Initialize the texture with empty data
-    GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA,
-        GL46.GL_FLOAT, 0);
-
-    // Generate mipmaps
-    GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
-
-    // Setup Pixel Buffer Objects (PBOs) for asynchronous data transfer
+    int pboCount = 2;
     pboIds = new int[pboCount];
     GL46.glGenBuffers(pboIds);
     for (int i = 0; i < pboCount; i++) {
       GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboIds[i]);
-      GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, (long) width * height * 4 * Float.BYTES,
-          GL46.GL_STREAM_DRAW);
+      GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, bufferSize, GL46.GL_STREAM_DRAW);
     }
   }
 
   /**
-   * Updates the vertex data and texture.
+   * Draws the vertex data and updates the texture.
    *
-   * @param vertices Array of vertices including position, color, and texture coordinates.
+   * @param vertices an array of vertex data including position, color, and texture coordinates
    */
-  public void update(float[] vertices) {
-
-    numVertices = vertices.length / 8; // Calculate the number of vertices
-
-    // Bind and update the Vertex Buffer Object with new data
+  public void draw(float[] vertices) {
+    // Update the VBO with new data
     GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
     GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertices, GL46.GL_STREAM_DRAW);
 
-    // Use Pixel Buffer Objects for updating the texture
     int pboId = pboIds[nextPboIndex];
-    nextPboIndex = (nextPboIndex + 1) % pboCount; // Cycle through PBOs
+    nextPboIndex = (nextPboIndex + 1) % pboIds.length;
 
     GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboId);
-    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, FrameBuffer.getBufferSize(),
-        GL46.GL_STREAM_DRAW);
+    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, bufferSize, GL46.GL_STREAM_DRAW);
+
     FloatBuffer pboBuffer = Objects.requireNonNull(
-        GL46.glMapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, GL46.GL_WRITE_ONLY)).asFloatBuffer();
-    for (int i = 0; i < vertices.length; i += 8) {
-      pboBuffer.put(vertices, i + 2, 4); // Extract RGBA values and put in the PBO buffer
+        GL46.glMapBufferRange(GL46.GL_PIXEL_UNPACK_BUFFER, 0, bufferSize,
+            GL46.GL_MAP_WRITE_BIT | GL46.GL_MAP_INVALIDATE_BUFFER_BIT)).asFloatBuffer();
+
+    // Extract the pixel data from the vertices
+    for (int i = 2; i < numVertices; i += 8) {
+      pboBuffer.put(vertices, i, 4);
     }
+
     GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
 
-    GL46.glBindTexture(GL46.GL_TEXTURE_2D, textureId);
-
-    // Update texture from the PBO
     GL46.glTexSubImage2D(GL46.GL_TEXTURE_2D, 0, 0, 0, width, height, GL46.GL_RGBA, GL46.GL_FLOAT,
-        0); // Use offset 0 in the PBO
+        0);
 
-    GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
-
-    int error = GL46.glGetError();
-    if (error != GL46.GL_NO_ERROR) {
-      log.severe("OpenGL error: " + error);
+    if (firstDraw) {
+      firstDraw = false;
+      GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
     }
-  }
 
-  /**
-   * Draws the vertices as polygons.
-   */
-  public void draw() {
-
-    shaderProgram.use(); // Use the shader program
-    GL46.glBindVertexArray(vao);
-    GL46.glPointSize(4.0f);
     GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
-
   }
 
   /**
-   * Cleans up OpenGL resources.
+   * Cleans up OpenGL resources by deleting buffers, array objects, and textures.
    */
   public void cleanup() {
 
@@ -163,7 +146,6 @@ public class RenderData {
     GL46.glDeleteVertexArrays(vao);
     GL46.glDeleteTextures(textureId);
     GL46.glDeleteBuffers(pboIds);
-    shaderProgram.cleanup(); // Clean up the shader program
   }
 
 }

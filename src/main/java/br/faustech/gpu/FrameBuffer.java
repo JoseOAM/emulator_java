@@ -86,7 +86,7 @@ public class FrameBuffer extends Component {
         float r = ((color >> 16) & 0xFF) / 255.0f;
         float g = ((color >> 8) & 0xFF) / 255.0f;
         float b = (color & 0xFF) / 255.0f;
-        float a = ((color >> 24) & 0xFF) / 255.0f;
+        float a = 1;
         float u = x / (float) width;
         float v = y / (float) height;
 

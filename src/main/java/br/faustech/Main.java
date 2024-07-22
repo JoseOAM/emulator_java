@@ -36,7 +36,7 @@ public class Main {
     args = new String[1];
     args[0] = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
 
-    LOG = true;
+    LOG = args.length > 1 && args[1].equals("log");
 
     setup();
 

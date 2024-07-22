@@ -1,6 +1,7 @@
 package br.faustech.gpu;
 
 import java.nio.IntBuffer;
+import lombok.Getter;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL46;
 

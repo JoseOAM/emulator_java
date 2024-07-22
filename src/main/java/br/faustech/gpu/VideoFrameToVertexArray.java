@@ -105,7 +105,7 @@ public class VideoFrameToVertexArray extends Thread {
         final float[] pixel = new float[]{normX, normY, ((color >> 16) & 0xFF) / 255.0f,  // r
             ((color >> 8) & 0xFF) / 255.0f,                         // g
             (color & 0xFF) / 255.0f,                                // b
-            ((color >> 24) & 0xFF) / 255.0f,                        // a
+            1,                                                      // a
             x / (float) width,                                      // u
             y / (float) height                                      // v
         };
