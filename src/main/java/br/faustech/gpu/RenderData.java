@@ -133,7 +133,7 @@ public class RenderData {
     nextPboIndex = (nextPboIndex + 1) % pboIds.length;
 
     GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboId);
-    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, vertex, GL46.GL_STREAM_DRAW);
+    GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, mapToColors(vertex), GL46.GL_STREAM_DRAW);
 
     GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
 
