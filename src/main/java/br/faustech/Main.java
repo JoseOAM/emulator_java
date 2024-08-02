@@ -30,11 +30,9 @@ public class Main {
 
   public static void main(String[] args) throws IOException, MemoryException {
 
-//    if (args.length < 1) {
-//      throw new IllegalArgumentException("Program file name not provided.");
-//    }
-    args = new String[1];
-    args[0] = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
+    if (args.length < 1) {
+      throw new IllegalArgumentException("Program file name not provided.");
+    }
 
     LOG = args.length > 1 && args[1].equals("log");
 
