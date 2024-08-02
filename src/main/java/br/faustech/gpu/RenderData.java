@@ -35,30 +35,6 @@ public class RenderData {
   }
 
   /**
-   * Maps the input array to colors by extracting the color data and discarding the position and UV
-   *
-   * @param input the input
-   * @return the float [ ]
-   */
-  public static float[] mapToColors(float[] input) {
-
-    if (input.length % 8 != 0) {
-      throw new IllegalArgumentException("Input array length must be a multiple of 8.");
-    }
-
-    float[] output = new float[FrameBuffer.getBufferSize()];
-
-    for (int i = 0, j = 0; i < input.length; i += 8, j += 4) {
-      output[j] = input[i + 2];     // r
-      output[j + 1] = input[i + 3]; // g
-      output[j + 2] = input[i + 4]; // b
-      output[j + 3] = input[i + 5]; // a
-    }
-
-    return output;
-  }
-
-  /**
    * Sets up OpenGL settings and initializes textures, buffers, and array objects.
    */
   public void setup() {
@@ -143,6 +119,30 @@ public class RenderData {
     GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
 
     GL46.glDrawArrays(GL46.GL_POINTS, 0, numVertices);
+  }
+
+  /**
+   * Maps the input array to colors by extracting the color data and discarding the position and UV
+   *
+   * @param input the input
+   * @return the float [ ]
+   */
+  public static float[] mapToColors(float[] input) {
+
+    if (input.length % 8 != 0) {
+      throw new IllegalArgumentException("Input array length must be a multiple of 8.");
+    }
+
+    float[] output = new float[FrameBuffer.getBufferSize() * 4];
+
+    for (int i = 0, j = 0; i < input.length; i += 8, j += 4) {
+      output[j] = input[i + 2];     // r
+      output[j + 1] = input[i + 3]; // g
+      output[j + 2] = input[i + 4]; // b
+      output[j + 3] = input[i + 5]; // a
+    }
+
+    return output;
   }
 
   /**

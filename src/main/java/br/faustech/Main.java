@@ -56,9 +56,9 @@ public class Main {
   private static void setup() {
 
     int[] memoryAddresses = new int[MEMORY_SIZE];
-    int[] frameBufferAddresses = new int[FRAME_BUFFER_SIZE];
+    int[] frameBufferAddresses = new int[FRAME_BUFFER_SIZE + 1];
 
-    for (int i = 0; i < MEMORY_SIZE + FRAME_BUFFER_SIZE; i++) {
+    for (int i = 0; i <= MEMORY_SIZE + FRAME_BUFFER_SIZE; i++) {
       if (i < MEMORY_SIZE) {
         memoryAddresses[i] = i;
       } else {

@@ -8,7 +8,6 @@ import br.faustech.gpu.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Represents a bus system that facilitates communication between different components like memory
@@ -74,9 +73,9 @@ public class Bus {
    */
   public ComponentType witchComponentType(final int address) {
 
-    if (ArrayUtils.contains(frameBuffer.getAddresses(), address)) {
+    if (address >= Memory.getMemorySize() && address <= FrameBuffer.getBufferSize()) {
       return FRAME_BUFFER;
-    } else if (ArrayUtils.contains(memory.getAddresses(), address)) {
+    } else if (address >= 0 && address < Memory.getMemorySize()) {
       return MEMORY;
     } else {
       throw new IllegalArgumentException("Invalid address");

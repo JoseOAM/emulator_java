@@ -17,7 +17,7 @@ public class GPU extends ComponentThread {
 
   private final FrameBuffer frameBuffer;
 
-  private final int frameBufferEndAddress = FrameBuffer.getBufferSize() / 4;
+  private final int frameBufferEndAddress = FrameBuffer.getBufferSize();
 
   private ShaderProgram shaderProgram;
 

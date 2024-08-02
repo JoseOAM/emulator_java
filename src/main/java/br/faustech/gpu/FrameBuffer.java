@@ -29,13 +29,13 @@ public class FrameBuffer extends Component {
    * @param addresses  The memory addresses.
    * @param bufferSize The size of each buffer.
    */
-  public FrameBuffer(final int[] addresses, int bufferSize) {
+  public FrameBuffer(final int[] addresses, final int bufferSize) {
 
     super(addresses);
     this.pixelBuffer = new byte[bufferSize * 4];  // Initialize pixel buffer
     this.frontBuffer = new byte[bufferSize * 8];  // Initialize front buffer
     this.backBuffer = new byte[bufferSize * 8];   // Initialize back buffer
-    FrameBuffer.bufferSize = bufferSize * 8;
+    FrameBuffer.bufferSize = bufferSize * 2;
   }
 
   /**
@@ -75,8 +75,8 @@ public class FrameBuffer extends Component {
       int color = data[i];
 
       // Calculate normalized coordinates for texture mapping
-      int x = (beginAddress + i) % width;
-      int y = (beginAddress + i) / width;
+      int x = ((beginAddress / 4) + (i * 4)) % width;
+      int y = ((beginAddress / 4) + (i * 4)) / width;
 
       float normX = (x / (float) width) * 2 - 1;
       float normY = ((height - y) / (float) height) * 2 - 1;
@@ -89,7 +89,7 @@ public class FrameBuffer extends Component {
 
       final float[] pixel = new float[]{normX, normY, r, g, b, 1, u, v};
 
-      this.writeToBackBufferFromFloats(8 * (y * width + x), pixel);
+      this.writeToBackBufferFromFloats((y * width + x) * 32, pixel);
     }
   }
 
@@ -104,7 +104,7 @@ public class FrameBuffer extends Component {
       throws MemoryException {
 
     int endAddress = beginAddress + data.length;
-    if (beginAddress < 0 || endAddress > pixelBuffer.length / 4) {
+    if (beginAddress < 0 || endAddress > pixelBuffer.length) {
       throw new MemoryException(
           "Invalid data positions or data length. (beginAddress: " + beginAddress + ", endAddress: "
               + endAddress + ")");
@@ -115,7 +115,7 @@ public class FrameBuffer extends Component {
     intBuffer.put(data);
 
     byteBuffer.rewind();
-    byteBuffer.get(pixelBuffer, beginAddress * 4, byteBuffer.remaining());
+    byteBuffer.get(pixelBuffer, beginAddress, byteBuffer.remaining());
   }
 
   /**
@@ -129,7 +129,7 @@ public class FrameBuffer extends Component {
       throws MemoryException {
 
     int endAddress = beginAddress + data.length;
-    if (beginAddress < 0 || endAddress > backBuffer.length / 4) {
+    if (beginAddress < 0 || endAddress > backBuffer.length) {
       throw new MemoryException(
           "Invalid data positions or data length. (beginAddress: " + beginAddress + ", endAddress: "
               + endAddress + ")");
@@ -140,7 +140,7 @@ public class FrameBuffer extends Component {
     floatBuffer.put(data);
 
     byteBuffer.rewind();
-    byteBuffer.get(backBuffer, beginAddress * 4, byteBuffer.remaining());
+    byteBuffer.get(backBuffer, beginAddress, byteBuffer.remaining());
   }
 
   /**
@@ -211,7 +211,7 @@ public class FrameBuffer extends Component {
   private ByteBuffer getByteBufferFromBuffer(final byte[] buffer, final int beginAddress,
       final int endAddress) throws MemoryException {
 
-    if (beginAddress < 0 || endAddress > buffer.length / 4 || beginAddress >= endAddress) {
+    if (beginAddress < 0 || endAddress > buffer.length || beginAddress >= endAddress) {
       throw new MemoryException(
           "Invalid data positions or data length. (beginAddress: " + beginAddress + ", endAddress: "
               + endAddress + ")");
@@ -219,7 +219,7 @@ public class FrameBuffer extends Component {
 
     ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
     byteBuffer.order(ByteOrder.nativeOrder());
-    byteBuffer.position(beginAddress * 4);
+    byteBuffer.position(beginAddress);
     return byteBuffer;
   }
 

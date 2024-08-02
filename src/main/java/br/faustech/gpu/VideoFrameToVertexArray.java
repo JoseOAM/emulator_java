@@ -1,5 +1,6 @@
 package br.faustech.gpu;
 
+import br.faustech.bus.Bus;
 import br.faustech.memory.MemoryException;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -24,26 +25,9 @@ public class VideoFrameToVertexArray extends Thread {
 
   private final int height; // Height of the target rendering
 
+  private final Bus bus; // Bus to write the converted frames
+
   private final FrameBuffer frameBuffer; // Frame buffer to write the converted frames
-
-  /**
-   * Resizes a BufferedImage to the specified dimensions.
-   *
-   * @param originalImage The original BufferedImage.
-   * @param targetWidth   The desired width.
-   * @param targetHeight  The desired height.
-   * @return A new resized BufferedImage.
-   */
-  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
-      int targetHeight) {
-
-    BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,
-        BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2d = resizedImage.createGraphics();
-    g2d.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
-    g2d.dispose();
-    return resizedImage;
-  }
 
   /**
    * Entry point for the thread; begins the video processing.
@@ -62,10 +46,11 @@ public class VideoFrameToVertexArray extends Thread {
     try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFilePath)) {
       grabber.start();
       Frame frame;
+
       while ((frame = grabber.grabImage()) != null) {
         long time = System.currentTimeMillis();
 
-        processFrameAndWriteInBuffer(frame);
+        processFrameAndWriteWithBus(frame);
 
         time = System.currentTimeMillis() - time;
         long sleepTime = Math.max(0,
@@ -82,6 +67,25 @@ public class VideoFrameToVertexArray extends Thread {
     } catch (Exception e) {
       throw new RuntimeException(String.format("Error processing video: %s", e.getMessage()));
     }
+  }
+
+  /**
+   * Processes a single frame, resizing and mapping it into the frame buffer using the bus.
+   *
+   * @param frame The frame to be processed.
+   */
+  private void processFrameAndWriteWithBus(Frame frame) {
+
+    BufferedImage originalImage = converter.getBufferedImage(frame);
+    BufferedImage resizedImage = resizeImage(originalImage, width, height);
+    int address = 4100;
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        bus.write(address, new int[]{resizedImage.getRGB(x, y)});
+        address += 4;
+      }
+    }
+    bus.write(4096, new int[]{0}); // Swap frame buffer
   }
 
   /**
@@ -110,10 +114,29 @@ public class VideoFrameToVertexArray extends Thread {
             y / (float) height                                      // v
         };
 
-        frameBuffer.writeToBackBufferFromFloats(8 * (y * width + x), pixel);
+        frameBuffer.writeToBackBufferFromFloats((y * width + x) * 32, pixel);
       }
     }
-    frameBuffer.swap(); // Swap buffers after writing frame
+    frameBuffer.swap();
+  }
+
+  /**
+   * Resizes a BufferedImage to the specified dimensions.
+   *
+   * @param originalImage The original BufferedImage.
+   * @param targetWidth   The desired width.
+   * @param targetHeight  The desired height.
+   * @return A new resized BufferedImage.
+   */
+  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
+      int targetHeight) {
+
+    BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,
+        BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2d = resizedImage.createGraphics();
+    g2d.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+    g2d.dispose();
+    return resizedImage;
   }
 
 }
