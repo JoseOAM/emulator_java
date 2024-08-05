@@ -17,6 +17,8 @@ public class GPU extends ComponentThread {
 
   private final FrameBuffer frameBuffer;
 
+  private final int frameBufferEndAddress = FrameBuffer.getBufferSize();
+
   private ShaderProgram shaderProgram;
 
   private RenderData renderData;
@@ -54,7 +56,7 @@ public class GPU extends ComponentThread {
         throw new RuntimeException(e);
       }
     }
-    cleanUp();
+    cleanup();
   }
 
   /**
@@ -68,17 +70,20 @@ public class GPU extends ComponentThread {
 
     window = new Window(width, height, "Emulator");
     window.init();
+    window.setIcon();
+    GL46.glViewport(0, 0, width, height);
     window.setResizeCallback((ignore, newWidth, newHeight) -> {
       GL46.glViewport(0, 0, newWidth, newHeight);
     });
 
     shaderProgram = new ShaderProgram();
     shaderProgram.loadShaders();
+    shaderProgram.use();
 
     renderData = new RenderData(width, height);
     renderData.setup();
 
-    window.setIcon();
+    GL46.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   }
 
   /**
@@ -98,13 +103,9 @@ public class GPU extends ComponentThread {
    */
   private void render() throws MemoryException {
 
-    GL46.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
-    shaderProgram.use();
-    float[] frame = frameBuffer.readFromFrontBufferAsFloats(0, FrameBuffer.getBufferSize() / 4);
-    renderData.update(frame);
-    renderData.draw();
+    renderData.draw(frameBuffer.readFromFrontBufferAsFloats(0, frameBufferEndAddress));
 
     window.swapBuffers();
     window.pollEvents();
@@ -113,7 +114,7 @@ public class GPU extends ComponentThread {
   /**
    * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
    */
-  private void cleanUp() {
+  private void cleanup() {
 
     renderData.cleanup();
     shaderProgram.cleanup();

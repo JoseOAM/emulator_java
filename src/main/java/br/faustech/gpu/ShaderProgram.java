@@ -17,29 +17,29 @@ public class ShaderProgram {
   public void loadShaders() {
     // Compile the vertex shader
     int vertexShader = compileShader(GL46.GL_VERTEX_SHADER, """
-            #version 460
-            layout (location = 0) in vec2 vertexPosition;
-            layout (location = 1) in vec4 vertexColor;
-            layout (location = 2) in vec2 texCoord;
-            out vec4 fragmentColor;
-            out vec2 TexCoord;
-            void main() {
-                gl_Position = vec4(vertexPosition, 0.0, 1.0);
-                fragmentColor = vertexColor;
-                TexCoord = texCoord;
-            }
+           #version 460
+             layout (location = 0) in vec2 vertexPosition;
+             layout (location = 1) in vec4 vertexColor;
+             layout (location = 2) in vec2 texCoord;
+             out vec2 TexCoord;
+             out vec4 outColor;
+             void main() {
+                 gl_Position = vec4(vertexPosition, 0.0, 1.0);
+                 TexCoord = texCoord;
+                 outColor = vertexColor;
+             }
         """);
 
     // Compile the fragment shader
     int fragmentShader = compileShader(GL46.GL_FRAGMENT_SHADER, """
             #version 460
-            in vec4 fragmentColor;
-            in vec2 TexCoord;
-            out vec4 color;
-            uniform sampler2D ourTexture;
-            void main() {
-                color = texture(ourTexture, TexCoord) * fragmentColor;
-            }
+             in vec2 TexCoord;
+             in vec4 outColor;
+             out vec4 FragColor;
+             uniform sampler2D ourTexture;
+             void main() {
+                 FragColor = texture(ourTexture, TexCoord) * outColor;
+             }
         """);
 
     // Create the shader program and attach the compiled shaders
