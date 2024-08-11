@@ -54,28 +54,38 @@ public class ProgramUtils {
    */
   public int[] readBinaryFile(File file) throws IOException {
 
+    if (!file.exists()) {
+      throw new FileNotFoundException(String.format("File %s not found.", file.getName()));
+    }
+
     String fileName = file.getName();
     if (!fileName.endsWith(".bin")) {
       throw new IllegalArgumentException("File must have .bin extension.");
     }
 
-    try (FileInputStream fis = new FileInputStream(file)) {
-      long fileSize = file.length();
-      byte[] buffer = new byte[(int) fileSize];
-      fis.read(buffer);
-
-      int[] programBin = new int[buffer.length / 4]; // Each integer is 4 bytes
-      int index = 0;
-
-      for (int i = 0; i < programBin.length; i++) {
-        int value = ((buffer[index++] & 0xFF) << 24) | ((buffer[index++] & 0xFF) << 16) | (
-            (buffer[index++] & 0xFF) << 8) | (buffer[index++] & 0xFF);
-        programBin[i] = value;
-      }
-
-      return programBin;
+    long fileSize = file.length();
+    if (fileSize % 4 != 0) {
+      throw new IOException(
+          "The file size is not a multiple of 4 bytes, so it cannot be read as 32-bit integers.");
     }
+
+    int[] programBin = new int[(int) (fileSize / 4)];
+
+    try (FileInputStream fis = new FileInputStream(file)) {
+      byte[] buffer = new byte[4]; // Buffer to hold 4 bytes at a time
+      for (int i = 0; i < programBin.length; i++) {
+        if (fis.read(buffer) != 4) {
+          throw new IOException("Error reading the binary file.");
+        }
+        programBin[i] =
+            ((buffer[3] & 0xFF) << 24) | ((buffer[2] & 0xFF) << 16) | ((buffer[1] & 0xFF) << 8) | (
+                buffer[0] & 0xFF);
+      }
+    }
+
+    return programBin;
   }
+
 
   /**
    * Reads the contents of a text file (.txt) and converts them into machine instructions.
@@ -89,6 +99,11 @@ public class ProgramUtils {
 
     if (!file.exists()) {
       throw new FileNotFoundException(String.format("File %s not found.", file.getName()));
+    }
+
+    String fileName = file.getName();
+    if (!fileName.endsWith(".txt")) {
+      throw new IllegalArgumentException("File must have .txt extension.");
     }
 
     StringBuilder content = new StringBuilder();
