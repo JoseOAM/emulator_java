@@ -1,13 +1,12 @@
 package br.faustech.memory;
 
-import br.faustech.comum.Component;
 import java.nio.ByteBuffer;
 import lombok.Getter;
 
 /**
  * Represents a simple memory model for storing and retrieving data.
  */
-public class Memory extends Component {
+public class Memory {
 
   @Getter private static int memorySize; // Total size of the memory array
 
@@ -18,12 +17,10 @@ public class Memory extends Component {
   /**
    * Constructs a memory component with specified size.
    *
-   * @param addresses  The memory addresses.
    * @param memorySize The size of the memory to allocate.
    */
-  public Memory(final int[] addresses, final int memorySize) {
+  public Memory(final int memorySize) {
 
-    super(addresses);
     this.memory = new byte[memorySize]; // Allocate memory
     Memory.memorySize = memorySize;
     this.writable = true; // Set the memory as writable

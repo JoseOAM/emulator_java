@@ -3,7 +3,6 @@ package br.faustech.cpu;
 import static br.faustech.Main.LOG;
 
 import br.faustech.bus.Bus;
-import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
 import java.util.function.BiFunction;
 import lombok.extern.java.Log;
@@ -14,7 +13,7 @@ import lombok.extern.java.Log;
  * from memory.
  */
 @Log
-public class CPU extends ComponentThread {
+public class CPU extends Thread {
 
   private final int[] registers = new int[32]; // 32 general-purpose registers
 
@@ -27,12 +26,10 @@ public class CPU extends ComponentThread {
   /**
    * Constructor for the CPU class.
    *
-   * @param addresses array of addresses for the component
-   * @param bus       the Bus instance for memory access
+   * @param bus the Bus instance for memory access
    */
-  public CPU(final int[] addresses, final Bus bus) {
+  public CPU(final Bus bus) {
 
-    super(addresses);
     this.bus = bus;
     initializeRegisters();
   }

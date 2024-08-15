@@ -84,10 +84,10 @@ public class CPUTest {
           frameBufferAddresses[i - memorySize] = i;
         }
       }
-      final Memory memory = new Memory(memoryAddresses, memorySize);
-      final Bus bus = new Bus(new FrameBuffer(frameBufferAddresses, frameBufferSize), memory);
-      final FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
-      final GPU gpu = new GPU(new int[1], 512, 512, frameBuffer);
+      final Memory memory = new Memory(memorySize);
+      final Bus bus = new Bus(new FrameBuffer(frameBufferSize), memory);
+      final FrameBuffer frameBuffer = new FrameBuffer(frameBufferSize);
+      final GPU gpu = new GPU(512, 512, frameBuffer);
       gpu.start();
 
       int position = 0;
@@ -100,7 +100,7 @@ public class CPUTest {
 
       System.out.printf("Memory before execution: %s%n", Arrays.toString(memory.read(32, 64)));
 
-      CPU cpu = new CPU(new int[1], bus);
+      CPU cpu = new CPU(bus);
       cpu.start();
 
       while (gpu.isAlive()) {

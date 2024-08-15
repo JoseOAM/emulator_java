@@ -18,7 +18,12 @@ public class Bus {
 
   private final FrameBuffer frameBuffer; // The frame buffer component
 
+  private final int frameBufferSize = FrameBuffer.getBufferSize(); // Size of the frame buffer component
+
   private final Memory memory; // The memory component
+
+  private final int memorySize = Memory.getMemorySize(); // Size of the memory component
+
 
   /**
    * Constructs a Bus with specified frame buffer and memory components.
@@ -40,7 +45,7 @@ public class Bus {
    */
   public void write(final int address, final int[] value) {
 
-    ComponentType componentType = witchComponentType(address); // Determine which component to use
+    ComponentType componentType = whichComponentType(address); // Determine which component to use
 
     try {
       switch (componentType) {
@@ -71,12 +76,12 @@ public class Bus {
    * @param address The address to check against known component addresses.
    * @return The component type associated with the address.
    */
-  public ComponentType witchComponentType(final int address) {
+  public ComponentType whichComponentType(final int address) {
 
-    if (address >= Memory.getMemorySize() && address <= FrameBuffer.getBufferSize()) {
-      return FRAME_BUFFER;
-    } else if (address >= 0 && address < Memory.getMemorySize()) {
+    if (address >= 0 && address < memorySize) {
       return MEMORY;
+    } else if (address >= memorySize && address <= frameBufferSize) {
+      return FRAME_BUFFER;
     } else {
       throw new IllegalArgumentException("Invalid address");
     }
@@ -91,7 +96,7 @@ public class Bus {
    */
   public int[] read(int address, final int endDataPosition) {
 
-    ComponentType componentType = witchComponentType(
+    ComponentType componentType = whichComponentType(
         address); // Determine which component to read from
 
     try {

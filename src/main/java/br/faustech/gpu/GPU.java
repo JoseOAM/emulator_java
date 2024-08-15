@@ -1,6 +1,5 @@
 package br.faustech.gpu;
 
-import br.faustech.comum.ComponentThread;
 import br.faustech.memory.MemoryException;
 import lombok.Getter;
 import org.lwjgl.glfw.GLFW;
@@ -9,7 +8,7 @@ import org.lwjgl.opengl.GL46;
 /**
  * Represents a GPU component that handles rendering operations.
  */
-public class GPU extends ComponentThread {
+public class GPU extends Thread {
 
   @Getter private static int width;
 
@@ -28,15 +27,13 @@ public class GPU extends ComponentThread {
   /**
    * Constructs a new GPU instance with specified dimensions and framebuffer.
    *
-   * @param addresses   the memory addresses.
    * @param width       the width of the render window.
    * @param height      the height of the render window.
    * @param frameBuffer the framebuffer to use for rendering.
    */
-  public GPU(final int[] addresses, final int width, final int height,
+  public GPU(final int width, final int height,
       final FrameBuffer frameBuffer) {
 
-    super(addresses);
     GPU.width = width;
     GPU.height = height;
     this.frameBuffer = frameBuffer;

@@ -1,6 +1,5 @@
 package br.faustech.gpu;
 
-import br.faustech.comum.Component;
 import br.faustech.memory.MemoryException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -13,7 +12,7 @@ import lombok.extern.java.Log;
  * A class representing a framebuffer that manages two buffers for double buffering.
  */
 @Log
-public class FrameBuffer extends Component {
+public class FrameBuffer {
 
   @Getter private static int bufferSize; // Size of each buffer
 
@@ -26,12 +25,10 @@ public class FrameBuffer extends Component {
   /**
    * Constructs a FrameBuffer with specified memory addresses and buffer size.
    *
-   * @param addresses  The memory addresses.
    * @param bufferSize The size of each buffer.
    */
-  public FrameBuffer(final int[] addresses, final int bufferSize) {
+  public FrameBuffer(final int bufferSize) {
 
-    super(addresses);
     this.pixelBuffer = new byte[bufferSize * 4];  // Initialize pixel buffer
     this.frontBuffer = new byte[bufferSize * 8];  // Initialize front buffer
     this.backBuffer = new byte[bufferSize * 8];   // Initialize back buffer

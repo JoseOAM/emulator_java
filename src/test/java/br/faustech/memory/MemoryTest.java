@@ -17,7 +17,7 @@ public class MemoryTest {
       addresses[i] = i;
     }
 
-    Memory memory = new Memory(addresses, memorySize);
+    Memory memory = new Memory(memorySize);
 
     final byte[] data = new byte[30];
     for (int i = 0; i < data.length; i++) {

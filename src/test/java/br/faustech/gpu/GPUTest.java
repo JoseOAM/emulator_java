@@ -35,15 +35,15 @@ public class GPUTest {
         frameBufferAddresses[i - MEMORY_SIZE] = i;
       }
     }
-    FrameBuffer frameBuffer = new FrameBuffer(frameBufferAddresses, frameBufferSize);
+    FrameBuffer frameBuffer = new FrameBuffer(frameBufferSize);
 
-    Bus bus = new Bus(frameBuffer, new Memory(memoryAddresses, MEMORY_SIZE));
+    Bus bus = new Bus(frameBuffer, new Memory(MEMORY_SIZE));
 
     VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(VIDEO_PATH, WIDTH, HEIGHT,
         bus, frameBuffer);
     videoProcessor.start();
 
-    GPU gpu = new GPU(new int[1], WIDTH, HEIGHT, frameBuffer);
+    GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
     gpu.start();
 
     while (gpu.isAlive()) {
