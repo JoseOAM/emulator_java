@@ -10,113 +10,115 @@ import org.lwjgl.opengl.GL46;
  */
 public class GPU extends Thread {
 
-  @Getter private static int width;
+    @Getter
+    private static int width;
 
-  @Getter private static int height;
+    @Getter
+    private static int height;
 
-  private final FrameBuffer frameBuffer;
+    private final FrameBuffer frameBuffer;
 
-  private final int frameBufferEndAddress = FrameBuffer.getBufferSize();
+    private final int frameBufferEndAddress = FrameBuffer.getBufferSize();
 
-  private ShaderProgram shaderProgram;
+    private ShaderProgram shaderProgram;
 
-  private RenderData renderData;
+    private RenderData renderData;
 
-  private Window window;
+    private Window window;
 
-  /**
-   * Constructs a new GPU instance with specified dimensions and framebuffer.
-   *
-   * @param width       the width of the render window.
-   * @param height      the height of the render window.
-   * @param frameBuffer the framebuffer to use for rendering.
-   */
-  public GPU(final int width, final int height,
-      final FrameBuffer frameBuffer) {
+    /**
+     * Constructs a new GPU instance with specified dimensions and framebuffer.
+     *
+     * @param width       the width of the render window.
+     * @param height      the height of the render window.
+     * @param frameBuffer the framebuffer to use for rendering.
+     */
+    public GPU(final int width, final int height,
+               final FrameBuffer frameBuffer) {
 
-    GPU.width = width;
-    GPU.height = height;
-    this.frameBuffer = frameBuffer;
-  }
-
-  /**
-   * The main run loop of the GPU component, handling initialization and rendering.
-   */
-  @Override
-  public void run() {
-
-    init();
-    while (isRunning()) {
-      try {
-        render();
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    cleanup();
-  }
-
-  /**
-   * Initializes the necessary components including window, shader program, and other render data.
-   */
-  private void init() {
-
-    if (!GLFW.glfwInit()) {
-      throw new IllegalStateException("Failed to initialize GLFW");
+        GPU.width = width;
+        GPU.height = height;
+        this.frameBuffer = frameBuffer;
     }
 
-    window = new Window(width, height, "Emulator");
-    window.init();
-    window.setIcon();
-    GL46.glViewport(0, 0, width, height);
-    window.setResizeCallback((ignore, newWidth, newHeight) -> {
-      GL46.glViewport(0, 0, newWidth, newHeight);
-    });
+    /**
+     * The main run loop of the GPU component, handling initialization and rendering.
+     */
+    @Override
+    public void run() {
 
-    shaderProgram = new ShaderProgram();
-    shaderProgram.loadShaders();
-    shaderProgram.use();
+        init();
+        while (isRunning()) {
+            try {
+                render();
+            } catch (MemoryException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        cleanup();
+    }
 
-    renderData = new RenderData(width, height);
-    renderData.setup();
+    /**
+     * Initializes the necessary components including window, shader program, and other render data.
+     */
+    private void init() {
 
-    GL46.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  }
+        if (!GLFW.glfwInit()) {
+            throw new IllegalStateException("Failed to initialize GLFW");
+        }
 
-  /**
-   * Checks if the window is still open and the rendering should continue.
-   *
-   * @return true if the window is not marked to close, false otherwise
-   */
-  private boolean isRunning() {
+        window = new Window(width, height, "Emulator");
+        window.init();
+        window.setIcon();
+        GL46.glViewport(0, 0, width, height);
+        window.setResizeCallback((ignore, newWidth, newHeight) -> {
+            GL46.glViewport(0, 0, newWidth, newHeight);
+        });
 
-    return !window.shouldClose();
-  }
+        shaderProgram = new ShaderProgram();
+        shaderProgram.loadShaders();
+        shaderProgram.use();
 
-  /**
-   * Handles the rendering of each frame to the window.
-   *
-   * @throws MemoryException if there's an issue accessing frame data
-   */
-  private void render() throws MemoryException {
+        renderData = new RenderData(width, height);
+        renderData.setup();
 
-    GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
+        GL46.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    }
 
-    renderData.draw(frameBuffer.readFromFrontBufferAsFloats(0, frameBufferEndAddress));
+    /**
+     * Checks if the window is still open and the rendering should continue.
+     *
+     * @return true if the window is not marked to close, false otherwise
+     */
+    private boolean isRunning() {
 
-    window.swapBuffers();
-    window.pollEvents();
-  }
+        return !window.shouldClose();
+    }
 
-  /**
-   * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
-   */
-  private void cleanup() {
+    /**
+     * Handles the rendering of each frame to the window.
+     *
+     * @throws MemoryException if there's an issue accessing frame data
+     */
+    private void render() throws MemoryException {
 
-    renderData.cleanup();
-    shaderProgram.cleanup();
-    window.cleanup();
-    GLFW.glfwTerminate();
-  }
+        GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
+
+        renderData.draw(frameBuffer.readFromFrontBufferAsFloats(0, frameBufferEndAddress));
+
+        window.swapBuffers();
+        window.pollEvents();
+    }
+
+    /**
+     * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
+     */
+    private void cleanup() {
+
+        renderData.cleanup();
+        shaderProgram.cleanup();
+        window.cleanup();
+        GLFW.glfwTerminate();
+    }
 
 }

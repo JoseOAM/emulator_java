@@ -5,14 +5,14 @@ package br.faustech.memory;
  */
 public class MemoryException extends Exception {
 
-  /**
-   * Constructs a new MemoryException with a specified detail message.
-   *
-   * @param message The detail message that explains the reason for the exception.
-   */
-  public MemoryException(String message) {
+    /**
+     * Constructs a new MemoryException with a specified detail message.
+     *
+     * @param message The detail message that explains the reason for the exception.
+     */
+    public MemoryException(String message) {
 
-    super(message); // Call superclass constructor with the provided message
-  }
+        super(message); // Call superclass constructor with the provided message
+    }
 
 }
