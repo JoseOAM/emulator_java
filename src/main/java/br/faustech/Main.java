@@ -22,8 +22,6 @@ public class Main {
 
     public static boolean LOG = false;
 
-    private static ProgramUtils programUtils;
-
     private static GPU gpu;
 
     private static CPU cpu;
@@ -36,12 +34,10 @@ public class Main {
 
         LOG = args.length > 1 && args[1].equals("--log");
 
-        setup();
+        setup(args);
 
-        programUtils.writeProgramInMemory(programUtils.readFile(new File(args[0])));
-
-        gpu.start();
         cpu.start();
+        gpu.start();
 
         while (gpu.isAlive()) {
             if (gpu.getState() == Thread.State.TERMINATED) {
@@ -51,11 +47,13 @@ public class Main {
         }
     }
 
-    private static void setup() {
+    private static void setup(String[] args) throws IOException {
         final FrameBuffer frameBuffer = new FrameBuffer(FRAME_BUFFER_SIZE);
-        final Memory memory = new Memory(MEMORY_SIZE);
-        final Bus bus = new Bus(frameBuffer, memory);
-        programUtils = new ProgramUtils(bus);
+        final Bus bus = new Bus(frameBuffer, new Memory(MEMORY_SIZE));
+
+        ProgramUtils programUtils = new ProgramUtils(bus);
+        programUtils.writeProgramInMemory(programUtils.readFile(new File(args[0])));
+
         gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
         cpu = new CPU(bus);
     }
