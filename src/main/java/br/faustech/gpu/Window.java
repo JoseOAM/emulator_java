@@ -51,6 +51,14 @@ public class Window {
         GLFW.glfwShowWindow(window);
         // Create capabilities for OpenGL
         GL.createCapabilities();
+
+        // Set key callback
+        GLFW.glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+            // TODO: Handle key events
+            if (action == GLFW.GLFW_PRESS) {
+                System.out.println("Key pressed: " + key);
+            }
+        });
     }
 
     /**
