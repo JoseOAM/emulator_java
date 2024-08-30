@@ -75,8 +75,7 @@ public class Window {
             IntBuffer comp = stack.mallocInt(1);
             ByteBuffer icon = STBImage.stbi_load("src/main/resources/icon.png", w, h, comp, 4);
             if (icon == null) {
-                throw new RuntimeException(
-                        String.format("Failed to load icon: %s", STBImage.stbi_failure_reason()));
+                return;
             }
             GLFWImage.Buffer icons = GLFWImage.malloc(1);
             icons.position(0).width(w.get(0)).height(h.get(0)).pixels(icon);
