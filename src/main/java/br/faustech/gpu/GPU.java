@@ -18,8 +18,6 @@ public class GPU extends Thread {
 
     private final FrameBuffer frameBuffer;
 
-    private final int frameBufferEndAddress = FrameBuffer.getBufferSize();
-
     private ShaderProgram shaderProgram;
 
     private RenderData renderData;
@@ -33,8 +31,7 @@ public class GPU extends Thread {
      * @param height      the height of the render window.
      * @param frameBuffer the framebuffer to use for rendering.
      */
-    public GPU(final int width, final int height,
-               final FrameBuffer frameBuffer) {
+    public GPU(final int width, final int height, final FrameBuffer frameBuffer) {
 
         GPU.width = width;
         GPU.height = height;
@@ -104,7 +101,7 @@ public class GPU extends Thread {
 
         GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
-        renderData.draw(frameBuffer.readFromFrontBufferAsFloats(0, frameBufferEndAddress));
+        renderData.draw(frameBuffer.getRenderData());
 
         window.swapBuffers();
         window.pollEvents();

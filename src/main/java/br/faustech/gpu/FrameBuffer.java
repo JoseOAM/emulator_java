@@ -1,5 +1,6 @@
 package br.faustech.gpu;
 
+import br.faustech.comum.RenderDataDto;
 import br.faustech.memory.MemoryException;
 import lombok.Getter;
 import lombok.extern.java.Log;
@@ -18,11 +19,13 @@ public class FrameBuffer {
     @Getter
     private static int bufferSize; // Size of each buffer
 
-    private final byte[] pixelBuffer; // Buffer to store pixel data
+    private byte[] frontPixelBuffer; // Buffer to store pixel data
 
-    private byte[] frontBuffer; // Buffer currently displayed
+    private byte[] backPixelBuffer; // Buffer to store pixel data
 
-    private byte[] backBuffer; // Buffer to write new data to
+    private byte[] frontVertexBuffer; // Buffer currently displayed
+
+    private byte[] backVertexBuffer; // Buffer to write new data to
 
     /**
      * Constructs a FrameBuffer with specified memory addresses and buffer size.
@@ -31,9 +34,11 @@ public class FrameBuffer {
      */
     public FrameBuffer(final int bufferSize) {
 
-        this.pixelBuffer = new byte[bufferSize * 4];  // Initialize pixel buffer
-        this.frontBuffer = new byte[bufferSize * 8];  // Initialize front buffer
-        this.backBuffer = new byte[bufferSize * 8];   // Initialize back buffer
+        final int size = bufferSize * 8;
+        this.frontPixelBuffer = new byte[size];  // Initialize pixel buffer
+        this.backPixelBuffer = new byte[size];  // Initialize pixel buffer
+        this.frontVertexBuffer = new byte[size];  // Initialize front buffer
+        this.backVertexBuffer = new byte[size];   // Initialize back buffer
         FrameBuffer.bufferSize = bufferSize * 2;
     }
 
@@ -69,7 +74,7 @@ public class FrameBuffer {
 
             final float[] pixel = new float[]{normX, normY, r, g, b, 1, u, v};
 
-            this.writeToBackBufferFromFloats((y * width + x) * 32, pixel);
+            this.writeToVertexBufferFromFloats((y * width + x) * 32, pixel);
         }
     }
 
@@ -82,33 +87,62 @@ public class FrameBuffer {
      */
     public void writeToPixelBufferFromInts(final int beginAddress, final int[] data) throws MemoryException {
 
-        checkAddressRange(beginAddress, data.length, pixelBuffer);
+        checkAddressRange(beginAddress, data.length, frontPixelBuffer);
 
-        ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.nativeOrder());
-        IntBuffer intBuffer = byteBuffer.asIntBuffer();
-        intBuffer.put(data);
+        int width = GPU.getWidth();
 
-        byteBuffer.rewind();
-        byteBuffer.get(pixelBuffer, beginAddress, byteBuffer.remaining());
+        for (int color : data) {
+            float r = ((color >> 16) & 0xFF) / 255.0f;
+            float g = ((color >> 8) & 0xFF) / 255.0f;
+            float b = (color & 0xFF) / 255.0f;
+
+            final float[] pixel = new float[]{r, g, b, 1};
+
+            this.writeToPixelBufferFromFloats(beginAddress * 4, pixel);
+        }
     }
 
     /**
-     * Writes float data to the back buffer, converting them to bytes before storing.
+     * Writes float data to the pixel buffer, converting them to bytes before storing.
      *
      * @param beginAddress The starting index where data is to be written.
      * @param data         The float data to be converted and written.
      * @throws MemoryException If the write operation exceeds buffer limits.
      */
-    public void writeToBackBufferFromFloats(final int beginAddress, final float[] data) throws MemoryException {
 
-        checkAddressRange(beginAddress, data.length, backBuffer);
+    public void writeToVertexBufferFromFloats(final int beginAddress, final float[] data) throws MemoryException {
+        this.writeToBufferFromFloats(this.backVertexBuffer, beginAddress, data);
+    }
+
+    /**
+     * Writes float data to the pixel buffer, converting them to bytes before storing.
+     *
+     * @param beginAddress The starting index where data is to be written.
+     * @param data         The float data to be converted and written.
+     * @throws MemoryException If the write operation exceeds buffer limits.
+     */
+    public void writeToPixelBufferFromFloats(final int beginAddress, final float[] data) throws MemoryException {
+        this.writeToBufferFromFloats(this.backPixelBuffer, beginAddress, data);
+    }
+
+    /**
+     * Writes float data to the buffer, converting them to bytes before storing.
+     *
+     * @param buffer       The buffer to write data to.
+     * @param beginAddress The starting index where data is to be written.
+     * @param data         The float data to be converted and written.
+     * @throws MemoryException If the write operation exceeds buffer limits.
+     */
+    public void writeToBufferFromFloats(final byte[] buffer, final int beginAddress, final float[] data) throws MemoryException {
+
+        checkAddressRange(beginAddress, data.length, buffer);
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.nativeOrder());
         FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
         floatBuffer.put(data);
 
         byteBuffer.rewind();
-        byteBuffer.get(backBuffer, beginAddress, byteBuffer.remaining());
+        byteBuffer.get(buffer, beginAddress, byteBuffer.remaining());
     }
 
     /**
@@ -131,9 +165,35 @@ public class FrameBuffer {
      */
     public void swap() {
 
-        byte[] temp = frontBuffer;
-        frontBuffer = backBuffer;
-        backBuffer = temp;
+        byte[] temp = frontVertexBuffer;
+        frontVertexBuffer = backVertexBuffer;
+        backVertexBuffer = temp;
+
+        temp = frontPixelBuffer;
+        frontPixelBuffer = backPixelBuffer;
+        backPixelBuffer = temp;
+    }
+
+    /**
+     * Retrieves the render data from the front buffer.
+     *
+     * @return A RenderDataDto object containing the vertex and pixel data.
+     * @throws MemoryException If invalid data positions are used.
+     */
+    public RenderDataDto getRenderData() throws MemoryException {
+        return RenderDataDto.builder().vertex(readFromVertexBufferAsFloats(0, bufferSize)).pixel(readFromPixelBufferAsFloats(0, bufferSize)).build();
+    }
+
+    /**
+     * Reads a segment of the front buffer as integer data.
+     *
+     * @param beginAddress The starting index in the buffer.
+     * @param endAddress   The ending index in the buffer.
+     * @return An array of integers read from the buffer.
+     * @throws MemoryException If invalid data positions are used.
+     */
+    public float[] readFromPixelBufferAsFloats(final int beginAddress, final int endAddress) throws MemoryException {
+        return this.readFromBufferAsFloats(frontPixelBuffer, beginAddress, endAddress);
     }
 
     /**
@@ -144,11 +204,23 @@ public class FrameBuffer {
      * @return An array of floats read from the buffer.
      * @throws MemoryException If invalid data positions are used.
      */
-    public float[] readFromFrontBufferAsFloats(final int beginAddress, final int endAddress) throws MemoryException {
+    public float[] readFromVertexBufferAsFloats(final int beginAddress, final int endAddress) throws MemoryException {
+        return this.readFromBufferAsFloats(frontVertexBuffer, beginAddress, endAddress);
+    }
+
+    /**
+     * Reads a segment of the given buffer as float data.
+     *
+     * @param beginAddress The starting index in the buffer.
+     * @param endAddress   The ending index in the buffer.
+     * @return An array of floats read from the buffer.
+     * @throws MemoryException If invalid data positions are used.
+     */
+    public float[] readFromBufferAsFloats(final byte[] buffer, final int beginAddress, final int endAddress) throws MemoryException {
 
         int length = endAddress - beginAddress;
 
-        final ByteBuffer byteBuffer = getByteBufferFromBuffer(frontBuffer, beginAddress, endAddress);
+        final ByteBuffer byteBuffer = getByteBufferFromBuffer(buffer, beginAddress, endAddress);
 
         FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
         float[] floatArray = new float[length];
@@ -190,7 +262,7 @@ public class FrameBuffer {
 
         int length = endAddress - beginAddress;
 
-        final ByteBuffer byteBuffer = getByteBufferFromBuffer(pixelBuffer, beginAddress, endAddress);
+        final ByteBuffer byteBuffer = getByteBufferFromBuffer(frontPixelBuffer, beginAddress, endAddress);
 
         IntBuffer intBuffer = byteBuffer.asIntBuffer();
         int[] intArray = new int[length];

@@ -1,5 +1,6 @@
 package br.faustech.gpu;
 
+import br.faustech.comum.RenderDataDto;
 import lombok.extern.java.Log;
 import org.lwjgl.opengl.GL46;
 
@@ -36,30 +37,6 @@ public class RenderData {
     }
 
     /**
-     * Maps the input array to colors by extracting the color data and discarding the position and UV
-     *
-     * @param input the input
-     * @return the float [ ]
-     */
-    public static float[] mapToColors(float[] input) {
-
-        if (input.length % 8 != 0) {
-            throw new IllegalArgumentException("Input array length must be a multiple of 8.");
-        }
-
-        float[] output = new float[FrameBuffer.getBufferSize() * 4];
-
-        for (int i = 0, j = 0; i < input.length; i += 8, j += 4) {
-            output[j] = input[i + 2];     // r
-            output[j + 1] = input[i + 3]; // g
-            output[j + 2] = input[i + 4]; // b
-            output[j + 3] = input[i + 5]; // a
-        }
-
-        return output;
-    }
-
-    /**
      * Sets up OpenGL settings and initializes textures, buffers, and array objects.
      */
     public void setup() {
@@ -83,8 +60,7 @@ public class RenderData {
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_REPEAT);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
-        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA,
-                GL46.GL_FLOAT, (FloatBuffer) null);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA, GL46.GL_FLOAT, (FloatBuffer) null);
     }
 
     /**
@@ -123,23 +99,22 @@ public class RenderData {
     /**
      * Draws the vertex data and updates the texture.
      *
-     * @param vertex an array of vertex data including position, color, and texture coordinates
+     * @param dataDto the object containing the vertex and pixel data
      */
-    public void draw(float[] vertex) {
+    public void draw(RenderDataDto dataDto) {
         // Update the VBO with new data
         GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-        GL46.glBufferData(GL46.GL_ARRAY_BUFFER, vertex, GL46.GL_STREAM_DRAW);
+        GL46.glBufferData(GL46.GL_ARRAY_BUFFER, dataDto.vertex(), GL46.GL_STREAM_DRAW);
 
         int pboId = pboIds[nextPboIndex];
         nextPboIndex = (nextPboIndex + 1) % pboIds.length;
 
         GL46.glBindBuffer(GL46.GL_PIXEL_UNPACK_BUFFER, pboId);
-        GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, mapToColors(vertex), GL46.GL_STREAM_DRAW);
+        GL46.glBufferData(GL46.GL_PIXEL_UNPACK_BUFFER, dataDto.pixel(), GL46.GL_STREAM_DRAW);
 
         GL46.glUnmapBuffer(GL46.GL_PIXEL_UNPACK_BUFFER);
 
-        GL46.glTexSubImage2D(GL46.GL_TEXTURE_2D, 0, 0, 0, width, height, GL46.GL_RGBA, GL46.GL_FLOAT,
-                0);
+        GL46.glTexSubImage2D(GL46.GL_TEXTURE_2D, 0, 0, 0, width, height, GL46.GL_RGBA, GL46.GL_FLOAT, 0);
 
         GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
 

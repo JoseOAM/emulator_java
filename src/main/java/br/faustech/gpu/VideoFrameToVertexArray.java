@@ -38,11 +38,9 @@ public class VideoFrameToVertexArray extends Thread {
      * @param targetHeight  The desired height.
      * @return A new resized BufferedImage.
      */
-    private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
-                                             int targetHeight) {
+    private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) {
 
-        BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight,
-                BufferedImage.TYPE_INT_ARGB);
+        BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = resizedImage.createGraphics();
         g2d.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
         g2d.dispose();
@@ -73,8 +71,7 @@ public class VideoFrameToVertexArray extends Thread {
                 processFrameAndWriteWithBus(frame);
 
                 time = System.currentTimeMillis() - time;
-                long sleepTime = Math.max(0,
-                        1000 / 60 - time); // Calculate time to delay to maintain frame rate
+                long sleepTime = Math.max(0, 1000 / 60 - time); // Calculate time to delay to maintain frame rate
                 try {
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
@@ -134,7 +131,7 @@ public class VideoFrameToVertexArray extends Thread {
                         y / (float) height                                      // v
                 };
 
-                frameBuffer.writeToBackBufferFromFloats((y * width + x) * 32, pixel);
+                frameBuffer.writeToVertexBufferFromFloats((y * width + x) * 32, pixel);
             }
         }
         frameBuffer.swap();
