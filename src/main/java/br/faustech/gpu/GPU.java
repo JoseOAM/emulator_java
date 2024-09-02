@@ -1,5 +1,6 @@
 package br.faustech.gpu;
 
+import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.MemoryException;
 import lombok.Getter;
 import org.lwjgl.glfw.GLFW;

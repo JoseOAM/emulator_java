@@ -1,6 +1,7 @@
 package br.faustech.gpu;
 
 import br.faustech.bus.Bus;
+import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.MemoryException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;

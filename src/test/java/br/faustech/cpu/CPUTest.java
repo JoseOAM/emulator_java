@@ -1,8 +1,8 @@
 package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
-import br.faustech.gpu.FrameBuffer;
 import br.faustech.gpu.GPU;
+import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import org.junit.jupiter.api.Test;

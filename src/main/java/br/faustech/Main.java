@@ -2,8 +2,8 @@ package br.faustech;
 
 import br.faustech.bus.Bus;
 import br.faustech.cpu.CPU;
-import br.faustech.gpu.FrameBuffer;
 import br.faustech.gpu.GPU;
+import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
 

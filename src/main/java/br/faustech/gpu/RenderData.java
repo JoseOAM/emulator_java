@@ -1,6 +1,7 @@
 package br.faustech.gpu;
 
 import br.faustech.comum.RenderDataDto;
+import br.faustech.memory.FrameBuffer;
 import lombok.extern.java.Log;
 import org.lwjgl.opengl.GL46;
 

@@ -1,7 +1,7 @@
-package br.faustech.gpu;
+package br.faustech.memory;
 
 import br.faustech.comum.RenderDataDto;
-import br.faustech.memory.MemoryException;
+import br.faustech.gpu.GPU;
 import lombok.Getter;
 import lombok.extern.java.Log;
 
@@ -51,8 +51,6 @@ public class FrameBuffer {
      */
     public void writePixel(int beginAddress, final int[] data) throws MemoryException {
 
-        this.writeToPixelBufferFromInts(beginAddress, data);
-
         int width = GPU.getWidth();
         int height = GPU.getHeight();
 
@@ -72,33 +70,9 @@ public class FrameBuffer {
             float u = x / (float) width;
             float v = y / (float) height;
 
-            final float[] pixel = new float[]{normX, normY, r, g, b, 1, u, v};
+            this.writeToPixelBufferFromFloats(beginAddress * 4, new float[]{r, g, b, 1});
 
-            this.writeToVertexBufferFromFloats((y * width + x) * 32, pixel);
-        }
-    }
-
-    /**
-     * Writes integer data to the back buffer, converting them to bytes before storing.
-     *
-     * @param beginAddress The starting index where data is to be written.
-     * @param data         The integer data to be converted and written.
-     * @throws MemoryException If the write operation exceeds buffer limits.
-     */
-    public void writeToPixelBufferFromInts(final int beginAddress, final int[] data) throws MemoryException {
-
-        checkAddressRange(beginAddress, data.length, frontPixelBuffer);
-
-        int width = GPU.getWidth();
-
-        for (int color : data) {
-            float r = ((color >> 16) & 0xFF) / 255.0f;
-            float g = ((color >> 8) & 0xFF) / 255.0f;
-            float b = (color & 0xFF) / 255.0f;
-
-            final float[] pixel = new float[]{r, g, b, 1};
-
-            this.writeToPixelBufferFromFloats(beginAddress * 4, pixel);
+            this.writeToVertexBufferFromFloats((y * width + x) * 32, new float[]{normX, normY, r, g, b, 1, u, v});
         }
     }
 
