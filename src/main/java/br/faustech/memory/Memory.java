@@ -14,8 +14,6 @@ public class Memory {
 
     private final byte[] memory; // Memory array to store data
 
-    private final boolean writable; // Flag to indicate if the memory is writable
-
     /**
      * Constructs a memory component with specified size.
      *
@@ -25,7 +23,6 @@ public class Memory {
 
         this.memory = new byte[memorySize]; // Allocate memory
         Memory.memorySize = memorySize;
-        this.writable = true; // Set the memory as writable
     }
 
     /**
@@ -37,16 +34,11 @@ public class Memory {
      */
     public void write(final int beginDataPosition, final byte[] value) throws MemoryException {
 
-        if (!this.writable) {
-            throw new MemoryException("Memory is not writable");
-        }
-
         for (int i = 0; i < value.length; i++) {
             if (beginDataPosition + i < this.memory.length) {
                 this.memory[beginDataPosition + i] = value[i];
             } else {
-                throw new MemoryException(
-                        String.format("Memory overflow at position %d", beginDataPosition + i));
+                throw new MemoryException(String.format("Memory overflow at position %d", beginDataPosition + i));
             }
         }
     }
@@ -59,10 +51,6 @@ public class Memory {
      * @throws MemoryException If the memory is not writable or if overflow occurs.
      */
     public void writeFromInt(final int beginDataPosition, final int[] value) throws MemoryException {
-
-        if (!this.writable) {
-            throw new MemoryException("Memory is not writable");
-        }
 
         int length = value.length * 4; // Calculate byte length from int length
         byte[] bytes = new byte[length];
@@ -77,8 +65,7 @@ public class Memory {
             byteBuffer.get(bytes);
             System.arraycopy(bytes, 0, this.memory, beginDataPosition, length);
         } else {
-            throw new MemoryException(
-                    String.format("Memory overflow at position %d", beginDataPosition + length - 1));
+            throw new MemoryException(String.format("Memory overflow at position %d", beginDataPosition + length - 1));
         }
     }
 
@@ -90,8 +77,7 @@ public class Memory {
      * @return Array of bytes read from memory.
      * @throws MemoryException If the specified range is invalid.
      */
-    public byte[] read(final int beginDataPosition, final int endDataPosition)
-            throws MemoryException {
+    public byte[] read(final int beginDataPosition, final int endDataPosition) throws MemoryException {
 
         if (beginDataPosition < 0 || endDataPosition > this.memory.length) {
             throw new MemoryException("Invalid range specified");
@@ -115,8 +101,7 @@ public class Memory {
      * @return Array of integers read from memory.
      * @throws MemoryException If the specified range is invalid.
      */
-    public int[] readAsInt(final int beginDataPosition, final int endDataPosition)
-            throws MemoryException {
+    public int[] readAsInt(final int beginDataPosition, final int endDataPosition) throws MemoryException {
 
         if (beginDataPosition < 0 || endDataPosition > this.memory.length) {
             throw new MemoryException("Invalid range specified");

@@ -3,7 +3,7 @@ package br.faustech.memory;
 /**
  * Custom exception class to handle memory-related errors.
  */
-public class MemoryException extends Exception {
+public class MemoryException extends RuntimeException {
 
     /**
      * Constructs a new MemoryException with a specified detail message.

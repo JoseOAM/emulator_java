@@ -18,7 +18,7 @@ public class Main {
 
     private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4;
 
-    private static final int MEMORY_SIZE = 4096;
+    private static final int MEMORY_SIZE = 1000 * 4096;
 
     public static boolean LOG = false;
 

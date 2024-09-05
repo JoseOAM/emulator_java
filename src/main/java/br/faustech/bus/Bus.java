@@ -47,26 +47,22 @@ public class Bus {
 
         ComponentType componentType = whichComponentType(address); // Determine which component to use
 
-        try {
-            switch (componentType) {
-                case FRAME_BUFFER:
-                    // Write to frame buffer if the address corresponds to it
-                    final int frameBufferAddress = address - Memory.getMemorySize();
-                    if (frameBufferAddress >= 0 && frameBufferAddress <= 3) {
-                        frameBuffer.swap();
-                    } else {
-                        frameBuffer.writePixel(frameBufferAddress - 4, value);
-                    }
-                    break;
-                case MEMORY:
-                    // Write to memory if the address corresponds to it
-                    memory.writeFromInt(address, value);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid component type");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        switch (componentType) {
+            case FRAME_BUFFER:
+                // Write to frame buffer if the address corresponds to it
+                final int frameBufferAddress = address - Memory.getMemorySize();
+                if (frameBufferAddress >= 0 && frameBufferAddress <= 3) {
+                    frameBuffer.swap();
+                } else {
+                    frameBuffer.writePixel(frameBufferAddress - 4, value);
+                }
+                break;
+            case MEMORY:
+                // Write to memory if the address corresponds to it
+                memory.writeFromInt(address, value);
+                break;
+            default:
+                throw new RuntimeException("Invalid component type");
         }
     }
 
@@ -80,10 +76,10 @@ public class Bus {
 
         if (address >= 0 && address < memorySize) {
             return MEMORY;
-        } else if (address >= memorySize && address <= frameBufferSize) {
+        } else if (address >= memorySize && address <= frameBufferSize + memorySize) {
             return FRAME_BUFFER;
         } else {
-            throw new IllegalArgumentException("Invalid address");
+            throw new MemoryException("Invalid address: " + address);
         }
     }
 
@@ -96,25 +92,17 @@ public class Bus {
      */
     public int[] read(int address, final int endDataPosition) {
 
-        ComponentType componentType = whichComponentType(
-                address); // Determine which component to read from
+        ComponentType componentType = whichComponentType(address); // Determine which component to read from
 
-        try {
-            return switch (componentType) {
-                case FRAME_BUFFER:
-                    address = address - Memory.getMemorySize() - 4;
-                    if (address < 0) {
-                        throw new MemoryException("Invalid address");
-                    }
-                    yield frameBuffer.readFromPixelBufferAsInts(address,
-                            endDataPosition - Memory.getMemorySize() - 4);
-                case MEMORY:
-                    yield memory.readAsInt(address, endDataPosition);
-            };
-        } catch (MemoryException e) {
-            log.severe(e.getMessage());
-            throw new RuntimeException(e.getMessage());
-        }
+        return switch (componentType) {
+            case FRAME_BUFFER:
+                address = address - Memory.getMemorySize() - 4;
+                if (address < 0) {
+                    throw new MemoryException("Invalid address");
+                }
+                yield frameBuffer.readFromPixelBufferAsInts(address, endDataPosition - Memory.getMemorySize() - 4);
+            case MEMORY:
+                yield memory.readAsInt(address, endDataPosition);
+        };
     }
-
 }

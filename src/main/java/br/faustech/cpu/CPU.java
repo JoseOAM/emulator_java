@@ -1,6 +1,7 @@
 package br.faustech.cpu;
 
 import br.faustech.bus.Bus;
+import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
 
@@ -64,8 +65,7 @@ public class CPU extends Thread {
         try {
             return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Invalid register index in part: %s", parts[partIndex]));
+            throw new RuntimeException(String.format("Invalid register index in part: %s", parts[partIndex]));
         }
     }
 
@@ -81,8 +81,7 @@ public class CPU extends Thread {
         try {
             return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Invalid immediate value in part: %s", parts[partIndex]));
+            throw new RuntimeException(String.format("Invalid immediate value in part: %s", parts[partIndex]));
         }
     }
 
@@ -96,8 +95,7 @@ public class CPU extends Thread {
     public static int signExtendImmediate(int immediate, int bitWidth) {
 
         int mask = 1 << (bitWidth - 1);
-        immediate =
-                immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
+        immediate = immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
 
         // If the most significant bit is set, the value is negative
         if ((immediate & mask) != 0) {
@@ -131,9 +129,9 @@ public class CPU extends Thread {
      */
     public void initializeRegisters() {
         // Stack Pointer (sp) to the top of the memory
-        registers[2] = 4092;
+        registers[2] = Memory.getMemorySize() - 4;
         // Global Pointer (gp) to some midpoint in memory, e.g., for global data
-        registers[3] = 2048;
+        registers[3] = Memory.getMemorySize() / 2;
         // Thread Pointer (tp) to some specific address for thread-local data
         registers[4] = 3000;
         // Frame Pointer (fp) to the start of the stack
@@ -173,6 +171,7 @@ public class CPU extends Thread {
     public void executeInstruction(int instruction) throws MemoryException {
 
         String decodedInstruction = Decoder.decodeInstruction(instruction);
+
         // Parse the decoded instruction
         String[] parts = decodedInstruction.split(" ");
         String operation = parts[0];
@@ -332,8 +331,7 @@ public class CPU extends Thread {
         programCounter += imm - 4; // Adjust for the default increment
 
         if (LOG) {
-            log.info(
-                    String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
+            log.info(String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
         }
     }
 
@@ -352,8 +350,7 @@ public class CPU extends Thread {
         programCounter = (registers[rs1] + imm) & ~1;
 
         if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd,
-                    programCounter));
+            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd, programCounter));
         }
     }
 
@@ -396,9 +393,7 @@ public class CPU extends Thread {
         }
 
         if (LOG) {
-            log.info(
-                    String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1,
-                            imm, rd, address, value));
+            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1, imm, rd, address, value));
         }
     }
 
@@ -428,8 +423,7 @@ public class CPU extends Thread {
         }
 
         if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm,
-                    programCounter));
+            log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm, programCounter));
         }
     }
 
@@ -462,9 +456,7 @@ public class CPU extends Thread {
         }
 
         if (LOG) {
-            log.info(
-                    String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1,
-                            rs2, imm, address, registers[rs2]));
+            log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1, rs2, imm, address, registers[rs2]));
         }
     }
 

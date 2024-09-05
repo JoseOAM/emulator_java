@@ -81,7 +81,7 @@ public class Window {
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             IntBuffer comp = stack.mallocInt(1);
-            ByteBuffer icon = STBImage.stbi_load("src/main/resources/icon.png", w, h, comp, 4);
+            ByteBuffer icon = STBImage.stbi_load("src/main/resources/images/icon.png", w, h, comp, 4);
             if (icon == null) {
                 return;
             }
