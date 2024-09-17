@@ -16,9 +16,9 @@ public class Main {
 
     private static final int HEIGHT = 240;
 
-    private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4;
+    private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4; // 4 bytes per pixel
 
-    private static final int MEMORY_SIZE = 1000 * 4096;
+    private static final int MEMORY_SIZE = 4194304; // 4MB
 
     public static boolean LOG = false;
 
