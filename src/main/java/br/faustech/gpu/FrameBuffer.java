@@ -131,7 +131,7 @@ public class FrameBuffer extends Component {
     int endAddress = beginAddress + data.length;
     if (beginAddress < 0 || endAddress > backBuffer.length) {
       throw new MemoryException(
-          "Invalid data positions or data length. (beginAddress: " + beginAddress + ", endAddress: "
+          "Invalid data positions or data length. (beginAddress: " + pixelBuffer.length + ", endAddress: "
               + endAddress + ")");
     }
 

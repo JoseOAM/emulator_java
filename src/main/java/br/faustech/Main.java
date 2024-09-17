@@ -34,9 +34,9 @@ public class Main {
 //      throw new IllegalArgumentException("Program file name not provided.");
 //    }
     args = new String[1];
-    args[0] = "C:\\Users\\ffsga\\IdeaProjects\\emulator\\output.txt";
+    args[0] = "C:\\Users\\Mate Amargo\\IdeaProjects\\emulator\\boot.txt";
 
-    LOG = args.length > 1 && args[1].equals("log");
+    LOG = false;
 
     setup();
 

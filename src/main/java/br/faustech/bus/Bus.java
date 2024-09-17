@@ -64,7 +64,6 @@ public class Bus {
       throw new RuntimeException(e.getMessage());
     }
   }
-
   /**
    * Determines which component type corresponds to a given address.
    *
@@ -81,7 +80,6 @@ public class Bus {
       throw new IllegalArgumentException("Invalid address");
     }
   }
-
   /**
    * Reads integer data from the appropriate component based on the address.
    *

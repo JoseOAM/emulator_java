@@ -145,16 +145,24 @@ public class Decoder {
     int rs1_or_zimm = (instruction >> 15) & 0x1F;
     int funct3 = (instruction >> 12) & 0x7;
     int rd = (instruction >> 7) & 0x1F;
-
-    String operation = switch (funct3) {
-      case 0b000 -> (csr == 0) ? "ecall" : "ebreak";
-      case 0b001 -> "csrrw";
-      case 0b010 -> "csrrs";
-      case 0b011 -> "csrrc";
-      case 0b101 -> "csrrwi";
-      case 0b110 -> "csrrsi";
-      case 0b111 -> "csrrci";
-      default -> "unknown";
+    String operation = "";
+    switch (funct3) {
+      case 0b000 -> {
+        if (csr == 0) {
+          operation = "ecall";
+        } else if (csr == 0x01) {
+          operation = "ebreak";
+        } else if (csr > 0x01) {
+          operation = "mret";
+        }
+      }
+      case 0b001 -> operation = "csrrw";
+      case 0b010 -> operation = "csrrs";
+      case 0b011 -> operation = "csrrc";
+      case 0b101 -> operation = "csrrwi";
+      case 0b110 -> operation = "csrrsi";
+      case 0b111 -> operation = "csrrci";
+      default -> operation = "unknown";
     };
 
     return (funct3 == 0b000) ? operation
@@ -167,6 +175,7 @@ public class Decoder {
    * @param instruction The 32-bit instruction to decode.
    * @return A string representation of the S-Type instruction.
    */
+
   private static String decodeSType(int instruction) {
 
     int imm11_5 = (instruction >> 25) & 0x7F;

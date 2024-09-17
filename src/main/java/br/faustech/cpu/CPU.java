@@ -1,6 +1,7 @@
 package br.faustech.cpu;
 
 import static br.faustech.Main.LOG;
+import static br.faustech.cpu.CPUInterrupt.*;
 
 import br.faustech.bus.Bus;
 import br.faustech.comum.ComponentThread;
@@ -21,8 +22,14 @@ public class CPU extends ComponentThread {
   private final int[] csrRegisters = new int[4096]; // CSR registers
 
   private final Bus bus;
-
+  /**  */
   private int programCounter = 0;
+
+  private static final int MIE = 772;   // CSR register for machine status
+  private static final int MTVEC = 773;    // CSR register
+  private static final int MEPC = 833;      // CSR register for program counter
+  private static final int MCAUSE = 834;    // CSR register
+  private static final int MIP = 836;    // CSR register
 
   /**
    * Constructor for the CPU class.
@@ -34,23 +41,7 @@ public class CPU extends ComponentThread {
 
     super(addresses);
     this.bus = bus;
-    initializeRegisters();
   }
-
-  /**
-   * Initializes the CPU registers with predefined values.
-   */
-  public void initializeRegisters() {
-    // Stack Pointer (sp) to the top of the memory
-    registers[2] = 4092;
-    // Global Pointer (gp) to some midpoint in memory, e.g., for global data
-    registers[3] = 2048;
-    // Thread Pointer (tp) to some specific address for thread-local data
-    registers[4] = 3000;
-    // Frame Pointer (fp) to the start of the stack
-    registers[8] = registers[2];
-  }
-
   /**
    * The main execution loop of the CPU. Fetches and executes instructions continuously.
    */
@@ -61,7 +52,21 @@ public class CPU extends ComponentThread {
       getNextInstructionInMemory();
     }
   }
-
+  private void setCsrRegister(int index, int value) {
+    csrRegisters[index] = value;
+  }
+  private void saveProgramCounter() {
+    csrRegisters[MEPC] = programCounter; //address of the mepc, used to save the program counter
+  }
+  /**
+   * Calls the interruption table when an interruption occurs.
+   */
+  private void interruptHandler(){
+    saveProgramCounter();
+    setCsrRegister(MIP,1);
+    //Set the program counter to the interrupt table position accordingly to the interrupt cause.
+    programCounter = csrRegisters[MTVEC]+4*(csrRegisters[MCAUSE]-1);
+  }
   /**
    * Fetches the next instruction from memory and executes it.
    */
@@ -74,7 +79,6 @@ public class CPU extends ComponentThread {
       throw new RuntimeException(e);
     }
   }
-
   /**
    * Decodes and executes a given instruction.
    *
@@ -82,13 +86,18 @@ public class CPU extends ComponentThread {
    * @throws MemoryException if there is an error accessing memory
    */
   public void executeInstruction(int instruction) throws MemoryException {
+    if(csrRegisters[MIE] == 1 && csrRegisters[MIP] == 0){
+      setStartTime();
+      setCsrRegister(MCAUSE,checkInterruption());
+      if(csrRegisters[MCAUSE] != 0){
+        interruptHandler();
+      }
+    }
 
     String decodedInstruction = Decoder.decodeInstruction(instruction);
-    // Parse the decoded instruction
-    String[] parts = decodedInstruction.split(" ");
+    String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
     String operation = parts[0];
     programCounter += 4; // Increment PC for next instruction, by default
-
     switch (operation) {
       case "add":
         executeRType(parts, Integer::sum);
@@ -163,6 +172,7 @@ public class CPU extends ComponentThread {
         break;
       case "ecall":
       case "ebreak":
+      case "mret":
         executeEType(parts);
         break;
       case "csrrw":
@@ -177,9 +187,11 @@ public class CPU extends ComponentThread {
         programCounter -= 4; // Revert PC increment if the operation is unknown
         throw new RuntimeException(String.format("Unknown operation: %s", operation));
     }
+    setEndTime();
   }
 
   /**
+   *
    * Executes R-Type instructions which involve register-to-register operations.
    *
    * @param parts     the instruction parts
@@ -415,8 +427,7 @@ public class CPU extends ComponentThread {
    *
    * @param parts the instruction parts
    */
-  private static void executeEType(String[] parts) {
-
+  private void executeEType(String[] parts) {
     switch (parts[0]) {
       case "ecall":
         handleEcall();
@@ -424,9 +435,11 @@ public class CPU extends ComponentThread {
       case "ebreak":
         handleEbreak();
         break;
+      case "mret":
+        handleMret();
+        break;
     }
   }
-
   /**
    * Executes I-Type control and status register instructions.
    *
@@ -435,8 +448,8 @@ public class CPU extends ComponentThread {
   private void executeITypeControlStatusRegister(String[] parts) {
 
     int rd = getRegisterIndex(parts, 1);
-    int rs1 = getRegisterIndex(parts, 2);
-    int csr = getImmediateValue(parts, 3);
+    int csr = getImmediateValue(parts, 2);
+    int rs1 = getRegisterIndex(parts, 3);
     csr = signExtendImmediate(csr, 12);
     int csrValue = csrRegisters[csr];
     switch (parts[0]) {
@@ -479,7 +492,6 @@ public class CPU extends ComponentThread {
    * @return the register index
    */
   private static int getRegisterIndex(String[] parts, int partIndex) {
-
     try {
       return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
     } catch (Exception e) {
@@ -487,7 +499,6 @@ public class CPU extends ComponentThread {
           String.format("Invalid register index in part: %s", parts[partIndex]));
     }
   }
-
   /**
    * Retrieves the immediate value from the instruction parts.
    *
@@ -496,7 +507,6 @@ public class CPU extends ComponentThread {
    * @return the immediate value
    */
   private static int getImmediateValue(String[] parts, int partIndex) {
-
     try {
       return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
     } catch (Exception e) {
@@ -515,34 +525,44 @@ public class CPU extends ComponentThread {
   public static int signExtendImmediate(int immediate, int bitWidth) {
 
     int mask = 1 << (bitWidth - 1);
-    immediate =
-        immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
+    immediate = immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
 
     // If the most significant bit is set, the value is negative
     if ((immediate & mask) != 0) {
       immediate = immediate | -(1 << bitWidth);
     }
-
     return immediate;
   }
 
   /**
-   * Handles the "ecall" instruction by transferring control to the exception handler.
+   * Handles the "ecall" instruction by entering in system mode.
    */
-  private static void handleEcall() {
-    // TODO
-
+  private void handleEcall() {
     if (LOG) {
-      log.info("ECALL: Transferred control to exception handler for syscall");
-    }
+        log.info("ECALL: Syscall ...");
+      }
   }
-
   /**
    * Handles the "ebreak" instruction by terminating the program via syscall exit.
    */
-  private static void handleEbreak() {
-    // TODO
+  private void handleEbreak() {
+    // Após o loop, imprimir o valor das posições de memória 1024 e 1028
+    int timerInterruptCount = bus.read(1024, 1028)[0];   // Lendo o valor da posição 1024
+    int keyInterruptCount = bus.read(1028, 1032)[0];     // Lendo o valor da posição 1028
+
+    System.out.println("Timer Interrupt Count (Posição 1024): " + timerInterruptCount);
+    System.out.println("Key Interrupt Count (Posição 1028): " + keyInterruptCount);
     throw new RuntimeException("Program has terminated via syscall exit.");
   }
+  /**
+   * Handles the "eret" instruction by returning from interrupt handling.
+   */
+  private void handleMret() {
+    if (LOG) {
+      log.info("MRET: Return from machine interrupt handler.");
+    }
+    programCounter = csrRegisters[MEPC];
+    setCsrRegister(MIP,0);
 
+  }
 }
