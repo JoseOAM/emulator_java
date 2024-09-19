@@ -48,7 +48,7 @@ public class CPU extends Thread {
      */
     @Override
     public void run() {
-
+        setStartTime();
         while (!isInterrupted()) {
             getNextInstructionInMemory();
         }
@@ -58,9 +58,7 @@ public class CPU extends Thread {
         csrRegisters[index] = value;
     }
 
-    private void saveProgramCounter() {
-        csrRegisters[MEPC] = programCounter; //address of the mepc, used to save the program counter
-    }
+    private void saveProgramCounter() {csrRegisters[MEPC] = programCounter;}
 
     /**
      * Calls the interruption table when an interruption occurs.
@@ -70,6 +68,7 @@ public class CPU extends Thread {
         setCsrRegister(MIP, 1);
         //Set the program counter to the interrupt table position accordingly to the interrupt cause.
         programCounter = csrRegisters[MTVEC] + 4 * (csrRegisters[MCAUSE] - 1);
+        setCsrRegister(MCAUSE, 0);
     }
 
     /**
@@ -78,6 +77,12 @@ public class CPU extends Thread {
     public void getNextInstructionInMemory() {
         // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
         try {
+            if (csrRegisters[MIE] == 1 && csrRegisters[MIP] == 0) {
+                setCsrRegister(MCAUSE, checkInterruption());
+                if (csrRegisters[MCAUSE] != 0) {
+                    interruptHandler();
+                }
+            }
             int instruction = bus.read(programCounter, programCounter + 4)[0];
             executeInstruction(instruction);
         } catch (MemoryException e) {
@@ -92,13 +97,6 @@ public class CPU extends Thread {
      * @throws MemoryException if there is an error accessing memory
      */
     public void executeInstruction(int instruction) throws MemoryException {
-        if (csrRegisters[MIE] == 1 && csrRegisters[MIP] == 0) {
-            setStartTime();
-            setCsrRegister(MCAUSE, checkInterruption());
-            if (csrRegisters[MCAUSE] != 0) {
-                interruptHandler();
-            }
-        }
 
         String decodedInstruction = Decoder.decodeInstruction(instruction);
         String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
@@ -193,7 +191,6 @@ public class CPU extends Thread {
                 programCounter -= 4; // Revert PC increment if the operation is unknown
                 throw new RuntimeException(String.format("Unknown operation: %s", operation));
         }
-        setEndTime();
     }
 
     /**
@@ -563,6 +560,7 @@ public class CPU extends Thread {
         }
         programCounter = csrRegisters[MEPC];
         setCsrRegister(MIP, 0);
+        setStartTime();
 
     }
 }
