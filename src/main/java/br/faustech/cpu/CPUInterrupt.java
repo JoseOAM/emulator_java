@@ -22,10 +22,12 @@ public abstract class CPUInterrupt extends Thread {
         long elapsedTime = System.currentTimeMillis() - startTime;
 
         if (elapsedTime >= Main.getClockSpeed()) {
+            isInterruptEnabled = false;
             setStartTime();
             Main.info("Timer shot at: " + elapsedTime + " miliseconds");
             return 1;
         } else if (keyPressedFlag) {
+            isInterruptEnabled = false;
             keyPressedFlag = false;
             Main.info("Key pressed: " + interruptData);
             return interruptData;

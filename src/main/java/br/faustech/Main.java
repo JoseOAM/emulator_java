@@ -37,7 +37,7 @@ public class Main {
             throw new IllegalArgumentException("Program file name not provided.");
         }
 
-//        LOG = args.length > 1 && args[1].equals("--log");
+        LOG = args.length > 1 && args[1].equals("--log");
 
         setup(args);
 

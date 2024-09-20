@@ -106,7 +106,6 @@ public class CPU extends CPUInterrupt {
     public void run() {
         setStartTime();
         while (!isInterrupted()) {
-            isInterruptEnabled = csrRegisters[MIE] == 1;
             processNextInstruction();
         }
     }
@@ -135,6 +134,7 @@ public class CPU extends CPUInterrupt {
         // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
         try {
             if (csrRegisters[MIE] == 1 && csrRegisters[MIP] == 0) {
+                isInterruptEnabled = true;
                 setCsrRegister(MCAUSE, checkInterruption());
                 if (csrRegisters[MCAUSE] != 0) {
                     interruptHandler();
