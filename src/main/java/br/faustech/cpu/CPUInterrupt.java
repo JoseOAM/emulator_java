@@ -1,37 +1,40 @@
 package br.faustech.cpu;
 
+import br.faustech.Main;
 import lombok.Getter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import javax.swing.JFrame;
+import lombok.Setter;
 
-public class CPUInterrupt {
+public abstract class CPUInterrupt extends Thread {
+
     @Getter
-    private static long startTime = 0;
-    private static boolean keyPressedFlag = false;
+    protected static boolean isInterruptEnabled = false;
 
-    public static void setKeyPressedFlag(){
-        keyPressedFlag = true;
-    }
+    @Setter
+    protected static int interruptData;
+
+    @Setter
+    protected static boolean keyPressedFlag = false;
+
+    @Getter
+    protected static long startTime = 0;
+
     public static int checkInterruption() {
-        long currentTime = System.currentTimeMillis();  // Captura o tempo atual
-        long elapsedTime = currentTime - startTime;  // Calcula o tempo decorrido
+        long elapsedTime = System.currentTimeMillis() - startTime;
 
-        if (elapsedTime >= 10) {  // Verifica se já passou 30 segundos
-            System.out.println("Timer shot at: " + elapsedTime + " miliseconds");
-            setStartTime();  // Reinicia o tempo inicial para a próxima medição
+        if (elapsedTime >= Main.getClockSpeed()) {
+            setStartTime();
+            Main.info("Timer shot at: " + elapsedTime + " miliseconds");
             return 1;
-        }
-        else if (keyPressedFlag) {
-            System.out.println("Tecla pressionada!");
-            keyPressedFlag = false; // Reseta o flag após detectar a tecla pressionada
-            return 2;
+        } else if (keyPressedFlag) {
+            keyPressedFlag = false;
+            Main.info("Key pressed: " + interruptData);
+            return interruptData;
         }
         return 0;
     }
 
     public static void setStartTime() {
-        startTime = System.currentTimeMillis();  // Captura o tempo inicial
+        startTime = System.currentTimeMillis();
     }
 }
 

@@ -1,5 +1,6 @@
 package br.faustech.gpu;
 
+import br.faustech.cpu.CPUInterrupt;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.lwjgl.glfw.GLFW;
@@ -9,7 +10,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
-import static br.faustech.cpu.CPUInterrupt.*;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -54,10 +55,8 @@ public class Window {
 
         // Set key callback
         GLFW.glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            // TODO: Handle key events
-            if (action == GLFW.GLFW_PRESS) {
-                setKeyPressedFlag();
-                System.out.println("Key pressed: " + key);
+            if (CPUInterrupt.isInterruptEnabled() && action == GLFW.GLFW_PRESS) {
+                CPUInterrupt.setInterruptData(key);
             }
         });
     }

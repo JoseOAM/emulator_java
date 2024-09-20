@@ -6,10 +6,13 @@ import br.faustech.gpu.GPU;
 import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
+import lombok.Getter;
+import lombok.extern.java.Log;
 
 import java.io.File;
 import java.io.IOException;
 
+@Log
 public class Main {
 
     private static final int WIDTH = 320;
@@ -19,8 +22,10 @@ public class Main {
     private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4; // 4 bytes per pixel
 
     private static final int MEMORY_SIZE = 4194304; // 4MB
+    @Getter
+    private static final int clockSpeed = 1000; // 1Hz
 
-    public static boolean LOG = false;
+    private static boolean LOG = true;
 
     private static GPU gpu;
 
@@ -32,7 +37,7 @@ public class Main {
             throw new IllegalArgumentException("Program file name not provided.");
         }
 
-        LOG = args.length > 1 && args[1].equals("--log");
+//        LOG = args.length > 1 && args[1].equals("--log");
 
         setup(args);
 
@@ -57,4 +62,11 @@ public class Main {
         gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
         cpu = new CPU(bus);
     }
+
+    public static void info(String message) {
+        if (LOG) {
+            log.info(message);
+        }
+    }
+
 }

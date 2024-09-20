@@ -11,19 +11,19 @@ import java.nio.FloatBuffer;
  * Handles the setup, updating, and drawing of render data for OpenGL.
  */
 @Log
-public class RenderData {
+public abstract class RenderData extends Thread {
 
-    private final int width, height; // Dimensions for the texture
+    protected final int width, height; // Dimensions for the texture
 
-    private final int bufferSize = FrameBuffer.getBufferSize(); // Size of the buffer
+    protected final int bufferSize = FrameBuffer.getBufferSize(); // Size of the buffer
 
-    private final int numVertices = bufferSize / 8; // Number of vertices to draw
+    protected final int numVertices = bufferSize / 8; // Number of vertices to draw
 
-    private int vao, vbo, textureId; // OpenGL object identifiers
+    protected int vao, vbo, textureId; // OpenGL object identifiers
 
-    private int[] pboIds; // Array of Pixel Buffer Object identifiers
+    protected int[] pboIds; // Array of Pixel Buffer Object identifiers
 
-    private int nextPboIndex = 0; // Index of the next PBO to use
+    protected int nextPboIndex = 0; // Index of the next PBO to use
 
     /**
      * Constructs a RenderData instance with specified texture dimensions.
@@ -40,7 +40,7 @@ public class RenderData {
     /**
      * Sets up OpenGL settings and initializes textures, buffers, and array objects.
      */
-    public void setup() {
+    protected void setup() {
 
         GL46.glEnable(GL46.GL_TEXTURE_2D);
         GL46.glPixelStorei(GL46.GL_UNPACK_ALIGNMENT, 4);
@@ -102,7 +102,7 @@ public class RenderData {
      *
      * @param dataDto the object containing the vertex and pixel data
      */
-    public void draw(RenderDataDto dataDto) {
+    protected void draw(RenderDataDto dataDto) {
         // Update the VBO with new data
         GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
         GL46.glBufferData(GL46.GL_ARRAY_BUFFER, dataDto.vertex(), GL46.GL_STREAM_DRAW);
@@ -123,14 +123,12 @@ public class RenderData {
     }
 
     /**
-     * Cleans up OpenGL resources by deleting buffers, array objects, and textures.
+     * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
      */
-    public void cleanup() {
-
+    protected void cleanup() {
         GL46.glDeleteBuffers(vbo);
         GL46.glDeleteVertexArrays(vao);
         GL46.glDeleteTextures(textureId);
         GL46.glDeleteBuffers(pboIds);
     }
-
 }

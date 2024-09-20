@@ -1,38 +1,30 @@
 package br.faustech.cpu;
 
+import br.faustech.Main;
 import br.faustech.bus.Bus;
+import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
 
 import java.util.function.BiFunction;
 
-import static br.faustech.Main.LOG;
-import static br.faustech.cpu.CPUInterrupt.*;
-
 /**
- * CPU class that extends ComponentThread to simulate a CPU execution environment. This class
+ * CPU class that extends Thread to simulate a CPU execution environment. This class
  * handles the initialization of registers, the program counter, and executes instructions fetched
  * from memory.
  */
 @Log
-public class CPU extends Thread {
+public class CPU extends CPUInterrupt {
 
-    private final int[] registers = new int[32]; // 32 general-purpose registers
-
-    private final int[] csrRegisters = new int[4096]; // CSR registers
-
+    private static final int MIE = 772;     // CSR register for machine status
+    private static final int MTVEC = 773;   // CSR register
+    private static final int MEPC = 833;    // CSR register for program counter
+    private static final int MCAUSE = 834;  // CSR register
+    private static final int MIP = 836;     // CSR register
+    private final int[] registers = new int[32];        // 32 general-purpose registers
+    private final int[] csrRegisters = new int[4096];   // CSR registers
     private final Bus bus;
-
-    /**
-     *
-     */
     private int programCounter = 0;
-
-    private static final int MIE = 772;   // CSR register for machine status
-    private static final int MTVEC = 773;    // CSR register
-    private static final int MEPC = 833;      // CSR register for program counter
-    private static final int MCAUSE = 834;    // CSR register
-    private static final int MIP = 836;    // CSR register
 
     /**
      * Constructs a CPU with a specified bus.
@@ -40,7 +32,71 @@ public class CPU extends Thread {
      * @param bus the bus to be used by the CPU
      */
     public CPU(final Bus bus) {
+        initializeRegisters();
         this.bus = bus;
+    }
+
+    /**
+     * Retrieves the index of a register from the instruction parts.
+     *
+     * @param parts     the instruction parts
+     * @param partIndex the index of the part to retrieve the register index from
+     * @return the register index
+     */
+    private static int getRegisterIndex(String[] parts, int partIndex) {
+        try {
+            return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("Invalid register index in part: %s", parts[partIndex]));
+        }
+    }
+
+    /**
+     * Retrieves the immediate value from the instruction parts.
+     *
+     * @param parts     the instruction parts
+     * @param partIndex the index of the part to retrieve the immediate value from
+     * @return the immediate value
+     */
+    private static int getImmediateValue(String[] parts, int partIndex) {
+        try {
+            return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("Invalid immediate value in part: %s", parts[partIndex]));
+        }
+    }
+
+    /**
+     * Sign-extends an immediate value to the specified bit width.
+     *
+     * @param immediate the immediate value to be sign-extended
+     * @param bitWidth  the bit width to extend to
+     * @return the sign-extended immediate value
+     */
+    public static int signExtendImmediate(int immediate, int bitWidth) {
+
+        int mask = 1 << (bitWidth - 1);
+        immediate = immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
+
+        // If the most significant bit is set, the value is negative
+        if ((immediate & mask) != 0) {
+            immediate = immediate | -(1 << bitWidth);
+        }
+        return immediate;
+    }
+
+    /**
+     * Initializes the CPU registers with predefined values.
+     */
+    public void initializeRegisters() {
+        // Stack Pointer (sp) to the top of the memory
+        registers[2] = Memory.getMemorySize() - 4;
+        // Global Pointer (gp) to some midpoint in memory, e.g., for global data
+        registers[3] = Memory.getMemorySize() / 2;
+        // Thread Pointer (tp) to some specific address for thread-local data
+        registers[4] = 3000;
+        // Frame Pointer (fp) to the start of the stack
+        registers[8] = registers[2];
     }
 
     /**
@@ -50,7 +106,8 @@ public class CPU extends Thread {
     public void run() {
         setStartTime();
         while (!isInterrupted()) {
-            getNextInstructionInMemory();
+            isInterruptEnabled = csrRegisters[MIE] == 1;
+            processNextInstruction();
         }
     }
 
@@ -58,14 +115,14 @@ public class CPU extends Thread {
         csrRegisters[index] = value;
     }
 
-    private void saveProgramCounter() {csrRegisters[MEPC] = programCounter;}
-
     /**
      * Calls the interruption table when an interruption occurs.
      */
     private void interruptHandler() {
-        saveProgramCounter();
+
+        csrRegisters[MEPC] = programCounter;
         setCsrRegister(MIP, 1);
+
         //Set the program counter to the interrupt table position accordingly to the interrupt cause.
         programCounter = csrRegisters[MTVEC] + 4 * (csrRegisters[MCAUSE] - 1);
         setCsrRegister(MCAUSE, 0);
@@ -74,7 +131,7 @@ public class CPU extends Thread {
     /**
      * Fetches the next instruction from memory and executes it.
      */
-    public void getNextInstructionInMemory() {
+    public void processNextInstruction() {
         // Set the pc to the first memory position and start reading 4 bytes instruction and sending them to execution
         try {
             if (csrRegisters[MIE] == 1 && csrRegisters[MIP] == 0) {
@@ -102,7 +159,7 @@ public class CPU extends Thread {
         String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
         String operation = parts[0];
         programCounter += 4; // Increment PC for next instruction, by default
-         switch (operation) {
+        switch (operation) {
             case "add":
                 executeRType(parts, Integer::sum);
                 break;
@@ -212,9 +269,7 @@ public class CPU extends Thread {
         // Perform the operation and store the result in register rd
         registers[rd] = operation.apply(value1, value2);
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
-        }
+        Main.info(String.format("Executing: %s rs1=%d rs2=%d -> rd=%d", parts[0], rs1, rs2, rd));
     }
 
     /**
@@ -238,9 +293,7 @@ public class CPU extends Thread {
                 break;
         }
 
-        if (LOG) {
-            log.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
-        }
+        Main.info(String.format("Executing: %s imm=%d -> rd=%d", parts[0], imm, rd));
     }
 
     /**
@@ -256,9 +309,7 @@ public class CPU extends Thread {
         registers[rd] = programCounter;
         programCounter += imm - 4; // Adjust for the default increment
 
-        if (LOG) {
-            log.info(String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
-        }
+        Main.info(String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
     }
 
     /**
@@ -275,9 +326,7 @@ public class CPU extends Thread {
         registers[rd] = programCounter;
         programCounter = (registers[rs1] + imm) & ~1;
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd, programCounter));
-        }
+        Main.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d PC=%d", parts[0], rs1, imm, rd, programCounter));
     }
 
     /**
@@ -318,9 +367,7 @@ public class CPU extends Thread {
                 break;
         }
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1, imm, rd, address, value));
-        }
+        Main.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d address=%d value=%d", parts[0], rs1, imm, rd, address, value));
     }
 
     /**
@@ -348,9 +395,7 @@ public class CPU extends Thread {
             programCounter += imm - 4; // Adjust for the default increment
         }
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm, programCounter));
-        }
+        Main.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> PC=%d", parts[0], rs1, rs2, imm, programCounter));
     }
 
     /**
@@ -381,9 +426,7 @@ public class CPU extends Thread {
                 break;
         }
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1, rs2, imm, address, registers[rs2]));
-        }
+        Main.info(String.format("Executing: %s rs1=%d rs2=%d imm=%d -> address=%d, value=%d", parts[0], rs1, rs2, imm, address, registers[rs2]));
     }
 
     /**
@@ -412,9 +455,7 @@ public class CPU extends Thread {
 
         registers[rd] = result;
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
-        }
+        Main.info(String.format("Executing: %s rs1=%d imm=%d -> rd=%d", parts[0], rs1, imm, rd));
     }
 
     /**
@@ -475,67 +516,14 @@ public class CPU extends Thread {
                 break;
         }
 
-        if (LOG) {
-            log.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
-        }
-    }
-
-    /**
-     * Retrieves the index of a register from the instruction parts.
-     *
-     * @param parts     the instruction parts
-     * @param partIndex the index of the part to retrieve the register index from
-     * @return the register index
-     */
-    private static int getRegisterIndex(String[] parts, int partIndex) {
-        try {
-            return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
-        } catch (Exception e) {
-            throw new RuntimeException(String.format("Invalid register index in part: %s", parts[partIndex]));
-        }
-    }
-
-    /**
-     * Retrieves the immediate value from the instruction parts.
-     *
-     * @param parts     the instruction parts
-     * @param partIndex the index of the part to retrieve the immediate value from
-     * @return the immediate value
-     */
-    private static int getImmediateValue(String[] parts, int partIndex) {
-        try {
-            return Integer.parseInt(parts[partIndex].split("=")[1].replace(",", ""));
-        } catch (Exception e) {
-            throw new RuntimeException(String.format("Invalid immediate value in part: %s", parts[partIndex]));
-        }
-    }
-
-    /**
-     * Sign-extends an immediate value to the specified bit width.
-     *
-     * @param immediate the immediate value to be sign-extended
-     * @param bitWidth  the bit width to extend to
-     * @return the sign-extended immediate value
-     */
-    public static int signExtendImmediate(int immediate, int bitWidth) {
-
-        int mask = 1 << (bitWidth - 1);
-        immediate = immediate & ((1 << bitWidth) - 1); // Ensure the immediate is at most 'bitWidth' bits
-
-        // If the most significant bit is set, the value is negative
-        if ((immediate & mask) != 0) {
-            immediate = immediate | -(1 << bitWidth);
-        }
-        return immediate;
+        Main.info(String.format("Executing: %s rs1=%d csr=%d -> rd=%d", parts[0], rs1, csr, rd));
     }
 
     /**
      * Handles the "ecall" instruction by entering in system mode.
      */
     private void handleEcall() {
-        if (LOG) {
-            log.info("ECALL: Syscall ...");
-        }
+        throw new RuntimeException("Program has terminated via syscall exit.");
     }
 
     /**
@@ -555,12 +543,9 @@ public class CPU extends Thread {
      * Handles the "eret" instruction by returning from interrupt handling.
      */
     private void handleMret() {
-        if (LOG) {
-            log.info("MRET: Return from machine interrupt handler.");
-        }
         programCounter = csrRegisters[MEPC];
         setCsrRegister(MIP, 0);
         setStartTime();
-
+        Main.info("MRET: Return from machine interrupt handler.");
     }
 }

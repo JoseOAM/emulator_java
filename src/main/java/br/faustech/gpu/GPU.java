@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL46;
 /**
  * Represents a GPU component that handles rendering operations.
  */
-public class GPU extends Thread {
+public class GPU extends RenderData {
 
     @Getter
     private static int width;
@@ -21,8 +21,6 @@ public class GPU extends Thread {
 
     private ShaderProgram shaderProgram;
 
-    private RenderData renderData;
-
     private Window window;
 
     /**
@@ -33,6 +31,7 @@ public class GPU extends Thread {
      * @param frameBuffer the framebuffer to use for rendering.
      */
     public GPU(final int width, final int height, final FrameBuffer frameBuffer) {
+        super(width, height);
 
         GPU.width = width;
         GPU.height = height;
@@ -77,8 +76,7 @@ public class GPU extends Thread {
         shaderProgram.loadShaders();
         shaderProgram.use();
 
-        renderData = new RenderData(width, height);
-        renderData.setup();
+        setup();
 
         GL46.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     }
@@ -102,7 +100,7 @@ public class GPU extends Thread {
 
         GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
 
-        renderData.draw(frameBuffer.getRenderData());
+        draw(frameBuffer.getRenderData());
 
         window.swapBuffers();
         window.pollEvents();
@@ -111,12 +109,11 @@ public class GPU extends Thread {
     /**
      * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
      */
-    private void cleanup() {
+    protected void cleanup() {
+        super.cleanup();
 
-        renderData.cleanup();
         shaderProgram.cleanup();
         window.cleanup();
-        GLFW.glfwTerminate();
     }
 
 }
