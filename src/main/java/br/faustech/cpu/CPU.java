@@ -102,7 +102,7 @@ public class CPU extends Thread {
         String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
         String operation = parts[0];
         programCounter += 4; // Increment PC for next instruction, by default
-        switch (operation) {
+         switch (operation) {
             case "add":
                 executeRType(parts, Integer::sum);
                 break;

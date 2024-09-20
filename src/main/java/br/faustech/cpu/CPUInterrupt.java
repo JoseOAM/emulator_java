@@ -10,6 +10,9 @@ public class CPUInterrupt {
     private static long startTime = 0;
     private static boolean keyPressedFlag = false;
 
+    public static void setKeyPressedFlag(){
+        keyPressedFlag = true;
+    }
     public static int checkInterruption() {
         long currentTime = System.currentTimeMillis();  // Captura o tempo atual
         long elapsedTime = currentTime - startTime;  // Calcula o tempo decorrido
@@ -20,7 +23,7 @@ public class CPUInterrupt {
             return 1;
         }
         else if (keyPressedFlag) {
-            //System.out.println("Tecla pressionada!");
+            System.out.println("Tecla pressionada!");
             keyPressedFlag = false; // Reseta o flag após detectar a tecla pressionada
             return 2;
         }
