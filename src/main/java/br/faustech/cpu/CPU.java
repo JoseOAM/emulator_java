@@ -20,6 +20,7 @@ public class CPU extends CPUInterrupt {
     private static final int MTVEC = 773;   // CSR register
     private static final int MEPC = 833;    // CSR register for program counter
     private static final int MCAUSE = 834;  // CSR register
+    private static final int MTVAL = 835;
     private static final int MIP = 836;     // CSR register
     private final int[] registers = new int[32];        // 32 general-purpose registers
     private final int[] csrRegisters = new int[4096];   // CSR registers
@@ -50,8 +51,8 @@ public class CPU extends CPUInterrupt {
             throw new RuntimeException(String.format("Invalid register index in part: %s", parts[partIndex]));
         }
     }
-
     /**
+     *
      * Retrieves the immediate value from the instruction parts.
      *
      * @param parts     the instruction parts
@@ -88,7 +89,9 @@ public class CPU extends CPUInterrupt {
     /**
      * Initializes the CPU registers with predefined values.
      */
-    public void initializeRegisters() {
+    private void initializeRegisters() {
+        // r0 is always zero
+        registers[0] = 0;
         // Stack Pointer (sp) to the top of the memory
         registers[2] = Memory.getMemorySize() - 4;
         // Global Pointer (gp) to some midpoint in memory, e.g., for global data
@@ -121,7 +124,10 @@ public class CPU extends CPUInterrupt {
 
         csrRegisters[MEPC] = programCounter;
         setCsrRegister(MIP, 1);
-
+        if(csrRegisters[MCAUSE] >= 2) {
+            setCsrRegister(MTVAL, csrRegisters[MCAUSE]-2); // MTVAL has the value of the key pressed
+            setCsrRegister(MCAUSE, 2);// MCAUSE has the value that was a key interrupt
+        }
         //Set the program counter to the interrupt table position accordingly to the interrupt cause.
         programCounter = csrRegisters[MTVEC] + 4 * (csrRegisters[MCAUSE] - 1);
         setCsrRegister(MCAUSE, 0);

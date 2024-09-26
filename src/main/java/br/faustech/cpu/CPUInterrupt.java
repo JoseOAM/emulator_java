@@ -30,7 +30,7 @@ public abstract class CPUInterrupt extends Thread {
             isInterruptEnabled = false;
             keyPressedFlag = false;
             Main.info("Key pressed: " + interruptData);
-            return interruptData;
+            return interruptData + 2;
         }
         return 0;
     }
