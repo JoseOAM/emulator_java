@@ -56,6 +56,7 @@ public class Window {
         // Set key callback
         GLFW.glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (CPUInterrupt.isInterruptEnabled() && action == GLFW.GLFW_PRESS) {
+                CPUInterrupt.setKeyPressedFlag(true);
                 CPUInterrupt.setInterruptData(key);
             }
         });

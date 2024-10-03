@@ -90,14 +90,11 @@ public class CPU extends CPUInterrupt {
      * Initializes the CPU registers with predefined values.
      */
     private void initializeRegisters() {
-        // r0 is always zero
-        registers[0] = 0;
         // Stack Pointer (sp) to the top of the memory
         registers[2] = Memory.getMemorySize() - 4;
         // Global Pointer (gp) to some midpoint in memory, e.g., for global data
         registers[3] = Memory.getMemorySize() / 2;
         // Thread Pointer (tp) to some specific address for thread-local data
-        registers[4] = 3000;
         // Frame Pointer (fp) to the start of the stack
         registers[8] = registers[2];
     }
@@ -160,7 +157,7 @@ public class CPU extends CPUInterrupt {
      * @throws MemoryException if there is an error accessing memory
      */
     public void executeInstruction(int instruction) throws MemoryException {
-
+        registers[0] = 0;   // r0 is always zero
         String decodedInstruction = Decoder.decodeInstruction(instruction);
         String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
         String operation = parts[0];
@@ -317,7 +314,6 @@ public class CPU extends CPUInterrupt {
 
         Main.info(String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
     }
-
     /**
      * Executes I-Type jump and link register instructions.
      *
@@ -536,7 +532,6 @@ public class CPU extends CPUInterrupt {
      * Handles the "ebreak" instruction by terminating the program via syscall exit.
      */
     private void handleEbreak() {
-        // Após o loop, imprimir o valor das posições de memória 1024 e 1028
         int timerInterruptCount = bus.read(1024, 1028)[0];   // Lendo o valor da posição 1024
         int keyInterruptCount = bus.read(1028, 1032)[0];     // Lendo o valor da posição 1028
 
