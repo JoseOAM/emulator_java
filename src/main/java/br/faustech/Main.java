@@ -22,6 +22,7 @@ public class Main {
     private static final int FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4; // 4 bytes per pixel
 
     private static final int MEMORY_SIZE = 4194304; // 4MB
+
     @Getter
     private static final int clockSpeed = 1000; // 1Hz
 
