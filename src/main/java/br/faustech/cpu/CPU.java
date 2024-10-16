@@ -16,16 +16,16 @@ import java.util.function.BiFunction;
 @Log
 public class CPU extends CPUInterrupt {
 
-    private static final int MIE = 772;     // CSR register for machine status
-    private static final int MTVEC = 773;   // CSR register
-    private static final int MEPC = 833;    // CSR register for program counter
-    private static final int MCAUSE = 834;  // CSR register
-    private static final int MTVAL = 835;
-    private static final int MIP = 836;     // CSR register
+    private static final int MIE = 772;                 // CSR register for machine status
+    private static final int MTVEC = 773;               // CSR register
+    private static final int MEPC = 833;                // CSR register for program counter
+    private static final int MCAUSE = 834;              // CSR register
+    private static final int MTVAL = 835;               // CSR register
+    private static final int MIP = 836;                 // CSR register
     private final int[] registers = new int[32];        // 32 general-purpose registers
     private final int[] csrRegisters = new int[4096];   // CSR registers
-    private final Bus bus;
-    private int programCounter = 0;
+    private final Bus bus;                              // The bus to be used by the CPU for memory access
+    private int programCounter = 0;                     // The program counter to keep track of the current instruction
 
     /**
      * Constructs a CPU with a specified bus.
@@ -51,8 +51,8 @@ public class CPU extends CPUInterrupt {
             throw new RuntimeException(String.format("Invalid register index in part: %s", parts[partIndex]));
         }
     }
+
     /**
-     *
      * Retrieves the immediate value from the instruction parts.
      *
      * @param parts     the instruction parts
@@ -121,8 +121,8 @@ public class CPU extends CPUInterrupt {
 
         csrRegisters[MEPC] = programCounter;
         setCsrRegister(MIP, 1);
-        if(csrRegisters[MCAUSE] >= 2) {
-            setCsrRegister(MTVAL, csrRegisters[MCAUSE]-2); // MTVAL has the value of the key pressed
+        if (csrRegisters[MCAUSE] >= 2) {
+            setCsrRegister(MTVAL, csrRegisters[MCAUSE] - 2); // MTVAL has the value of the key pressed
             setCsrRegister(MCAUSE, 2);// MCAUSE has the value that was a key interrupt
         }
         //Set the program counter to the interrupt table position accordingly to the interrupt cause.
@@ -314,6 +314,7 @@ public class CPU extends CPUInterrupt {
 
         Main.info(String.format("Executing: %s imm=%d -> rd=%d PC=%d", parts[0], imm, rd, programCounter));
     }
+
     /**
      * Executes I-Type jump and link register instructions.
      *
@@ -532,12 +533,12 @@ public class CPU extends CPUInterrupt {
      * Handles the "ebreak" instruction by terminating the program via syscall exit.
      */
     private void handleEbreak() {
-        int timerInterruptCount = bus.read(1024, 1028)[0];   // Lendo o valor da posição 1024
-        int keyInterruptCount = bus.read(1028, 1032)[0];     // Lendo o valor da posição 1028
+        int timerInterruptCount = bus.read(1024, 1028)[0];   // Reading the value from position 1024
+        int keyInterruptCount = bus.read(1028, 1032)[0];     // Reading the value from position 1028
 
-        System.out.println("Timer Interrupt Count (Posição 1024): " + timerInterruptCount);
-        System.out.println("Key Interrupt Count (Posição 1028): " + keyInterruptCount);
-        throw new RuntimeException("Program has terminated via syscall exit.");
+        Main.info("Timer Interrupt Count (memory at position 1024): " + timerInterruptCount);
+        Main.info("Key Interrupt Count (memory at position 1028): " + keyInterruptCount);
+        throw new EbreakException("Program has terminated via syscall exit.");
     }
 
     /**

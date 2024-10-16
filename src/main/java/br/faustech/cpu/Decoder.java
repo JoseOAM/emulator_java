@@ -13,19 +13,19 @@ public class Decoder {
      */
     public static String decodeInstruction(int instruction) {
 
-        int opcode = instruction & 0x7F; // Extract the 7-bit opcode
+        int opcode = instruction & 0x7F;                                // Extract the 7-bit opcode
 
         return switch (opcode) {
-            case 0x33 -> decodeRType(instruction);              // R-Type
-            case 0x67 -> decodeITypeJumpAndLinkRegister(instruction); // I-Type-jalr
-            case 0x03 -> decodeITypeLoad(instruction);          // I-Type-load
-            case 0x13 -> decodeITypeImmediate(instruction);     // I-Type-immediate
+            case 0x33 -> decodeRType(instruction);                      // R-Type
+            case 0x67 -> decodeITypeJumpAndLinkRegister(instruction);   // I-Type-jalr
+            case 0x03 -> decodeITypeLoad(instruction);                  // I-Type-load
+            case 0x13 -> decodeITypeImmediate(instruction);             // I-Type-immediate
             case 0x73 -> decodeITypeControlStatusRegister(instruction); // I-Type-csr
-            case 0x23 -> decodeSType(instruction);              // S-Type
-            case 0x63 -> decodeBType(instruction);              // B-Type
-            case 0x37, 0x17 -> decodeUType(instruction);        // U-Type
-            case 0x6F -> decodeJType(instruction);              // J-Type
-            default -> "Unknown Type";                          // Default case for unknown opcode
+            case 0x23 -> decodeSType(instruction);                      // S-Type
+            case 0x63 -> decodeBType(instruction);                      // B-Type
+            case 0x37, 0x17 -> decodeUType(instruction);                // U-Type
+            case 0x6F -> decodeJType(instruction);                      // J-Type
+            default -> "Unknown Type";                                  // Default case for unknown opcode
         };
     }
 

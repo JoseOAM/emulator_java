@@ -27,7 +27,8 @@ public class Window {
 
     private final String title; // Title of the window
 
-    private long window; // Native handle to the GLFW window
+    @Getter
+    private static long window; // Native handle to the GLFW window
 
     /**
      * Initializes and creates a window. Throws IllegalStateException if window creation fails.
