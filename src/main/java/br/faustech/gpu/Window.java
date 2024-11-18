@@ -21,14 +21,11 @@ import java.nio.IntBuffer;
 @RequiredArgsConstructor
 public class Window {
 
-    private final int width;  // Width of the window
-
-    private final int height; // Height of the window
-
-    private final String title; // Title of the window
-
     @Getter
     private static long window; // Native handle to the GLFW window
+    private final int width;  // Width of the window
+    private final int height; // Height of the window
+    private final String title; // Title of the window
 
     /**
      * Initializes and creates a window. Throws IllegalStateException if window creation fails.
