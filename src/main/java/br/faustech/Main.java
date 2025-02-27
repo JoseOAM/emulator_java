@@ -3,6 +3,7 @@ package br.faustech;
 import br.faustech.bus.Bus;
 import br.faustech.cpu.CPU;
 import br.faustech.gpu.GPU;
+import br.faustech.gui.GUI;
 import br.faustech.memory.FrameBuffer;
 import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
@@ -32,25 +33,27 @@ public class Main {
 
     private static CPU cpu;
 
+    private static GUI gui;
+
     public static void main(String[] args) throws IOException {
 
-        if (args.length < 1) {
-            throw new IllegalArgumentException("Program file name not provided.");
-        }
+//        if (args.length < 1) {
+//            throw new IllegalArgumentException("Program file name not provided.");
+//        }
 
         LOG = args.length > 1 && args[1].equals("--log");
 
         setup(args);
 
-        cpu.start();
-        gpu.start();
-
-        while (gpu.isAlive()) {
-            if (gpu.getState() == Thread.State.TERMINATED) {
-                gpu.interrupt();
-                cpu.interrupt();
-            }
-        }
+//        cpu.start();
+//        gpu.start();
+//
+//        while (gpu.isAlive()) {
+//            if (gpu.getState() == Thread.State.TERMINATED) {
+//                gpu.interrupt();
+//                cpu.interrupt();
+//            }
+//        }
     }
 
     private static void setup(String[] args) throws IOException {
@@ -62,6 +65,7 @@ public class Main {
 
         gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
         cpu = new CPU(bus);
+        gui = new GUI();
     }
 
     public static void info(String message) {
