@@ -49,7 +49,14 @@ public class Main {
 //                MEMORY_SIZE = Integer.parseInt(args[3]);
 //                FRAME_BUFFER_SIZE = WIDTH * HEIGHT * 4;
 
-                setup(path);
+                final FrameBuffer frameBuffer = new FrameBuffer(FRAME_BUFFER_SIZE);
+                final Bus bus = new Bus(frameBuffer, new Memory(MEMORY_SIZE));
+
+                ProgramUtils programUtils = new ProgramUtils(bus);
+                programUtils.writeProgramInMemory(programUtils.readFile(new File(path)));
+
+                gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
+                cpu = new CPU(bus, gui);
                 cpu.start();
                 gpu.start();
 
@@ -61,17 +68,6 @@ public class Main {
                 }
             }
         });
-    }
-
-    private static void setup(String path) throws IOException {
-        final FrameBuffer frameBuffer = new FrameBuffer(FRAME_BUFFER_SIZE);
-        final Bus bus = new Bus(frameBuffer, new Memory(MEMORY_SIZE));
-
-        ProgramUtils programUtils = new ProgramUtils(bus);
-        programUtils.writeProgramInMemory(programUtils.readFile(new File(path)));
-
-        gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
-        cpu = new CPU(bus);
     }
 
     public static void info(String message) {

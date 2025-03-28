@@ -2,6 +2,7 @@ package br.faustech.cpu;
 
 import br.faustech.Main;
 import br.faustech.bus.Bus;
+import br.faustech.gui.GUI;
 import br.faustech.memory.Memory;
 import br.faustech.memory.MemoryException;
 import lombok.extern.java.Log;
@@ -32,9 +33,10 @@ public class CPU extends CPUInterrupt {
      *
      * @param bus the bus to be used by the CPU
      */
-    public CPU(final Bus bus) {
+    public CPU(final Bus bus, GUI gui) {
         initializeRegisters();
         this.bus = bus;
+        gui.setRegisterUpdater(registers);
     }
 
     /**

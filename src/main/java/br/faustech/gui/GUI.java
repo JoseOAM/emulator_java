@@ -11,17 +11,20 @@ import java.text.NumberFormat;
 import java.util.List;
 
 public class GUI extends JFrame {
+    private final JTextField[] registerField = new JTextField[32];
+    private final JTextField[] memoryField = new JTextField[32];
     private final ArgsListener listener;
     private final List<String> recentFiles = new ArrayList<>();
     private static final int MAX_RECENT_FILES = 5;
     private final JMenu recentFilesMenu = new JMenu("Recent Files");
+    private RegisterUpdater updater;
 
     public GUI(ArgsListener listener) {
         super("RISC-V Emulator");
         this.listener = listener;
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 400);
+        setSize(1000, 800);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -29,6 +32,19 @@ public class GUI extends JFrame {
         add(toolBar, BorderLayout.NORTH);
 
         setJMenuBar(createMenuBar());
+        setLayout(new GridLayout(32, 3, 5, 5));
+
+        for(int i = 0; i < 32; i++) {
+            add(new JLabel("Reg " + i + ":"));
+
+            registerField[i] = new JTextField("0x0000");
+            registerField[i].setEditable(false);
+            add(registerField[i]);
+
+            memoryField[i] = new JTextField("0x0000");
+            memoryField[i].setEditable(false);
+            add(memoryField[i]);
+        }
 
         setVisible(true);
     }
@@ -117,6 +133,28 @@ public class GUI extends JFrame {
         else {
             throw new IllegalArgumentException("Unknown error.");
         }
+    }
+
+    public void updateRegister(int[] registers) {
+        SwingUtilities.invokeLater(() -> {
+            for (int i = 0; i < 32; i++) {
+                String newRegisterValue = "0x" + Integer.toHexString(registers[i]);
+                String newMemoryValue = "0x" + Integer.toHexString(registers[i]);
+
+                if (!registerField[i].getText().equals(newRegisterValue)) {
+                    registerField[i].setText(newRegisterValue);
+                }
+                if (!memoryField[i].getText().equals(newMemoryValue)) {
+                    memoryField[i].setText(newMemoryValue);
+                }
+            }
+        });
+    }
+
+    public void setRegisterUpdater(int[] registers) {
+        RegisterUpdater updater = new RegisterUpdater(registers, registerField, memoryField);
+        updater.execute();;
+        this.updater = updater;
     }
 }
 
