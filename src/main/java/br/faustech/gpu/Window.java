@@ -102,6 +102,10 @@ public class Window {
         return GLFW.glfwWindowShouldClose(window);
     }
 
+    public void setShouldClose(boolean shouldClose) {
+        GLFW.glfwSetWindowShouldClose(window, shouldClose);
+    }
+
     /**
      * Swaps the front and back buffers of the window.
      */

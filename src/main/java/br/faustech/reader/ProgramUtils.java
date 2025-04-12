@@ -13,15 +13,16 @@ import java.util.Scanner;
  */
 public class ProgramUtils {
 
-    private final Bus bus; // Bus instance used for writing programs into memory
+    private Bus bus; // Bus instance used for writing programs into memory
 
     /**
-     * Constructs a ProgramUtils instance with a specified Bus instance.
+     * Constructs a ProgramUtils instance.
      *
-     * @param bus The Bus instance to use for memory operations.
      */
-    public ProgramUtils(Bus bus) {
+    public ProgramUtils() {
+    }
 
+    public void setUtils(Bus bus) {
         this.bus = bus;
     }
 

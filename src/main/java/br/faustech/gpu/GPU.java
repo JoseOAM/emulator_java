@@ -17,6 +17,9 @@ public class GPU extends RenderData {
     @Getter
     private static int height;
 
+    @Getter
+    private String title;
+
     private final FrameBuffer frameBuffer;
 
     private ShaderProgram shaderProgram;
@@ -30,12 +33,13 @@ public class GPU extends RenderData {
      * @param height      the height of the render window.
      * @param frameBuffer the framebuffer to use for rendering.
      */
-    public GPU(final int width, final int height, final FrameBuffer frameBuffer) {
+    public GPU(final int width, final int height, final FrameBuffer frameBuffer, String title) {
         super(width, height);
 
         GPU.width = width;
         GPU.height = height;
         this.frameBuffer = frameBuffer;
+        this.title = title;
     }
 
     /**
@@ -64,7 +68,7 @@ public class GPU extends RenderData {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
 
-        window = new Window(width, height, "Emulator");
+        window = new Window(width, height, title);
         window.init();
         window.setIcon();
         GL46.glViewport(0, 0, width, height);
@@ -91,6 +95,10 @@ public class GPU extends RenderData {
         return !window.shouldClose();
     }
 
+    public void setShouldClose(boolean shouldClose) {
+        window.setShouldClose(shouldClose);
+    }
+
     /**
      * Handles the rendering of each frame to the window.
      *
@@ -109,7 +117,7 @@ public class GPU extends RenderData {
     /**
      * Cleans up resources upon shutdown, ensuring graceful termination of GLFW and other components.
      */
-    protected void cleanup() {
+    public void cleanup() {
         super.cleanup();
 
         shaderProgram.cleanup();

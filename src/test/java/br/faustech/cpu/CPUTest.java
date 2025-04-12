@@ -38,7 +38,7 @@ public class CPUTest {
 
             System.out.printf("Memory before execution: %s%n", Arrays.toString(memory.read(32, 64)));
 
-            CPU cpu = new CPU(bus);
+            CPU cpu = new CPU(bus, null);
             cpu.start();
 
             while (gpu.isAlive()) {

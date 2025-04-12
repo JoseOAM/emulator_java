@@ -36,7 +36,9 @@ public class CPU extends CPUInterrupt {
     public CPU(final Bus bus, GUI gui) {
         initializeRegisters();
         this.bus = bus;
-        gui.setRegisterUpdater(registers);
+        if (gui != null) {
+            gui.setRegisterUpdater(registers);
+        }
     }
 
     /**
