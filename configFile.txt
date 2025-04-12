@@ -1,0 +1,9 @@
+{
+    "recentFiles": [
+        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\ufms_demo.txt",
+        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\paliteiro_demo.txt",
+        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\interrupt_demo.txt",
+        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\color_demo.txt"
+    ],
+    "darkMode": true
+}
