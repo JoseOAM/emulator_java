@@ -71,6 +71,7 @@ public class Main {
                         while (gpu.isAlive()) {
                             if (gpu.getState() == Thread.State.TERMINATED) {
                                 gui.getRegisterUpdater().stopUpdater();
+                                gui.consoleInfo("Emulator stopped");
                                 gpu.interrupt();
                                 cpu.interrupt();
                                 configFile.saveHistory(gui.getRecentFiles(), gui.getDarkModeEnabled());
