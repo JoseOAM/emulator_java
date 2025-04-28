@@ -8,6 +8,8 @@ import br.faustech.reader.ProgramUtils;
 
 import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -172,9 +174,9 @@ public class GUI extends JFrame {
     private void openDebugTab() {
         String tabTitle = "Debug";
 
-        for (int i = 0; i < lowerTabbedPane.getTabCount(); i++) {
-            if (lowerTabbedPane.getTitleAt(i).equals(tabTitle)) {
-                lowerTabbedPane.removeTabAt(i);
+        for (int i = 0; i < centerTabbedPane.getTabCount(); i++) {
+            if (centerTabbedPane.getTitleAt(i).equals(tabTitle)) {
+                centerTabbedPane.removeTabAt(i);
                 centerSplitPane.setDividerLocation(0);
                 return;
             }
@@ -336,41 +338,74 @@ public class GUI extends JFrame {
     private void openFileContentTab(File file) {
         try {
             programInstructions = programUtils.readFile(file);
-            programHexadecimalArea = new JTextArea();
-            programBinaryArea = new JTextArea();
 
-            programHexadecimalArea.setEditable(false);
-            programBinaryArea.setEditable(false);
+            String[] columnNames = {"Line", "Hexadecimal", "Binary", "Code"};
 
-            programHexadecimalArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-            programBinaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-
-            StringBuilder hexadecimalContent = new StringBuilder();
+            Object[][] tableData = new Object[programInstructions.length][4];
             for (int i = 0; i < programInstructions.length; i++) {
-                hexadecimalContent.append("Line ").append(i).append(": 0x")
-                        .append(String.format("%08X", programInstructions[i]))
-                        .append("\n");
+                String hex = String.format("0x%08X", programInstructions[i]);
+                String binary = String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0');
+                tableData[i][0] = "Line " + i;
+                tableData[i][1] = hex;
+                tableData[i][2] = binary;
+                tableData[i][3] = programInstructions[i];
             }
-            programHexadecimalArea.setText(hexadecimalContent.toString());
 
-            StringBuilder binaryContent = new StringBuilder();
-            for (int i = 0; i < programInstructions.length; i++) {
-                binaryContent.append("Line ").append(i).append(": ")
-                        .append(String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0'))
-                        .append("\n");
-            }
-            programBinaryArea.setText(binaryContent.toString());
+            DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
 
-            JScrollPane scrollHexadecimalPane = new JScrollPane(programHexadecimalArea);
-            JScrollPane scrollBinaryPane = new JScrollPane(programBinaryArea);
+            JTable contentTable = new JTable(model);
+            contentTable.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+            contentTable.setRowHeight(20);
 
+            TableColumnModel columnModel = contentTable.getColumnModel();
+            columnModel.getColumn(0).setPreferredWidth(70);
+            columnModel.getColumn(1).setPreferredWidth(120);
+            columnModel.getColumn(2).setPreferredWidth(270);
+            columnModel.getColumn(3).setPreferredWidth(250);
+
+            JScrollPane tableScrollPane = new JScrollPane(contentTable);
             contentPanel.removeAll();
+            contentPanel.add(tableScrollPane, BorderLayout.CENTER);
 
-            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                    scrollHexadecimalPane, scrollBinaryPane);
-            splitPane.setResizeWeight(0.5);
-
-            contentPanel.add(splitPane, BorderLayout.CENTER);
+//            programHexadecimalArea = new JTextArea();
+//            programBinaryArea = new JTextArea();
+//
+//            programHexadecimalArea.setEditable(false);
+//            programBinaryArea.setEditable(false);
+//
+//            programHexadecimalArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+//            programBinaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+//
+//            StringBuilder hexadecimalContent = new StringBuilder();
+//            for (int i = 0; i < programInstructions.length; i++) {
+//                hexadecimalContent.append("Line ").append(i).append(": 0x")
+//                        .append(String.format("%08X", programInstructions[i]))
+//                        .append("\n");
+//            }
+//            programHexadecimalArea.setText(hexadecimalContent.toString());
+//
+//            StringBuilder binaryContent = new StringBuilder();
+//            for (int i = 0; i < programInstructions.length; i++) {
+//                binaryContent.append("Line ").append(i).append(": ")
+//                        .append(String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0'))
+//                        .append("\n");
+//            }
+//            programBinaryArea.setText(binaryContent.toString());
+//
+//            JScrollPane scrollHexadecimalPane = new JScrollPane(programHexadecimalArea);
+//            JScrollPane scrollBinaryPane = new JScrollPane(programBinaryArea);
+//
+//            contentPanel.removeAll();
+//
+//            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+//                    scrollHexadecimalPane, scrollBinaryPane);
+//            splitPane.setResizeWeight(0.5);
+//            contentPanel.add(splitPane, BorderLayout.CENTER);
 
             if (darkModeEnabled.get()) {
                 setColorsRecursively(getContentPane(), Color.DARK_GRAY, Color.WHITE);
