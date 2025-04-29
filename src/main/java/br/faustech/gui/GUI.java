@@ -3,6 +3,7 @@ package br.faustech.gui;
 import br.faustech.comum.ArgsListener;
 import br.faustech.comum.ConfigFile;
 import br.faustech.cpu.CPU;
+import br.faustech.cpu.Decoder;
 import br.faustech.gpu.GPU;
 import br.faustech.reader.ProgramUtils;
 
@@ -345,10 +346,11 @@ public class GUI extends JFrame {
             for (int i = 0; i < programInstructions.length; i++) {
                 String hex = String.format("0x%08X", programInstructions[i]);
                 String binary = String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0');
+                String decodedInstruction = Decoder.decodeInstruction(programInstructions[i]);
                 tableData[i][0] = "Line " + i;
                 tableData[i][1] = hex;
                 tableData[i][2] = binary;
-                tableData[i][3] = programInstructions[i];
+                tableData[i][3] = decodedInstruction;
             }
 
             DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
