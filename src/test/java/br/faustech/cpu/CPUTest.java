@@ -25,7 +25,7 @@ public class CPUTest {
             final Memory memory = new Memory(MEMORY_SIZE);
             final FrameBuffer frameBuffer = new FrameBuffer(FRAME_BUFFER_SIZE);
             final Bus bus = new Bus(frameBuffer, memory);
-            final GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
+            final GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer, "CPU Test");
             gpu.start();
 
             int position = 0;
@@ -42,9 +42,10 @@ public class CPUTest {
             cpu.start();
 
             while (gpu.isAlive()) {
-                Thread.sleep(1500);
+                Thread.sleep(2000);
                 cpu.interrupt();
                 gpu.interrupt();
+                gpu.setShouldClose(true);
             }
 
             System.out.printf("Memory after execution: %s%n%n", Arrays.toString(memory.read(32, 64)));

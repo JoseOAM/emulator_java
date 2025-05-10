@@ -118,18 +118,18 @@ public class Decoder {
             case 0b100 -> "xori";
             case 0b110 -> "ori";
             case 0b111 -> "andi";
-            case 0b001 -> {
-                imm &= 0x1F;
-                yield String.format("slli rd=%d, rs1=%d, shamt=%d", rd, rs1, imm);
-            }
-            case 0b101 -> {
-                String op = (imm & 0xFE0) == 0 ? "srli" : "srai";
-                imm &= 0x1F;
-                yield String.format("%s rd=%d, rs1=%d, shamt=%d", op, rd, rs1, imm);
-            }
+            case 0b001 -> "ssli";
+            case 0b101 -> (imm & 0xFE0) == 0 ? "srli" : "srai";
             default -> "unknown";
         };
-
+        if (funct3 == 0b001) {
+            imm &= 0x1F;
+            return String.format("slli rd=%d, rs1=%d, shamt=%d", rd, rs1, imm);
+        }
+        if (funct3 == 0b101) {
+            imm &= 0x1F;
+            return String.format("%s rd=%d, rs1=%d, shamt=%d", operation, rd, rs1, imm);
+        }
         return String.format("%s rd=%d, rs1=%d, imm=%d", operation, rd, rs1, imm);
     }
 
@@ -165,8 +165,11 @@ public class Decoder {
             default -> operation = "unknown";
         }
 
-        return (funct3 == 0b000) ? operation
-                : String.format("%s rd=%d, csr=%d, rs1_or_zimm=%d", operation, rd, csr, rs1_or_zimm);
+        return switch (funct3) {
+            case 0b001, 0b010, 0b011 -> String.format("%s rd=%d, csr=%d, rs1=%d", operation, rd, csr, rs1_or_zimm);
+            case 0b101, 0b110, 0b111 -> String.format("%s rd=%d, csr=%d, zimm=%d", operation, rd, csr, rs1_or_zimm);
+            default -> operation;
+        };
     }
 
     /**

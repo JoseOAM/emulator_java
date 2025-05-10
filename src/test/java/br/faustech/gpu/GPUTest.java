@@ -30,7 +30,7 @@ public class GPUTest {
         VideoFrameToVertexArray videoProcessor = new VideoFrameToVertexArray(VIDEO_PATH, WIDTH, HEIGHT, bus, frameBuffer);
         videoProcessor.start();
 
-        GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer);
+        GPU gpu = new GPU(WIDTH, HEIGHT, frameBuffer, "GPU Test");
         gpu.start();
 
         while (gpu.isAlive()) {
