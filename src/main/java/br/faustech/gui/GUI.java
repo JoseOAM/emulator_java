@@ -7,6 +7,7 @@ import br.faustech.cpu.Decoder;
 import br.faustech.gpu.GPU;
 import br.faustech.reader.ProgramUtils;
 
+import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class GUI extends JFrame {
     private int[] programInstructions;
@@ -30,6 +30,7 @@ public class GUI extends JFrame {
     private final JPanel contentPanel;
     private JTextArea programHexadecimalArea;
     private JTextArea programBinaryArea;
+    private DefaultTableModel model;
     private final JSplitPane centerSplitPane;
     private final JSplitPane completeSplitPane;
     private final ArgsListener listener;
@@ -127,6 +128,7 @@ public class GUI extends JFrame {
 
         JMenu fileMenu = new JMenu("File");
         JMenu optionsMenu = new JMenu("Options");
+        JMenu exportMenu = new JMenu("Export");
 
         JMenuItem openItem = new JMenuItem("Open");
         openItem.addActionListener(e -> openFile());
@@ -152,6 +154,23 @@ public class GUI extends JFrame {
         updateRecentFilesMenu();
 
         menuBar.add(optionsMenu);
+
+        JMenuItem hexadecimalItem = new JMenuItem("Hexadecimal Code");
+        hexadecimalItem.addActionListener(e -> exportHexadecimalCode());
+
+        JMenuItem binaryItem = new JMenuItem("Binary Code");
+        binaryItem.addActionListener(e -> exportBinaryCode());
+
+        JMenuItem completeItem = new JMenuItem("Complete Code");
+        completeItem.addActionListener(e -> exportCompleteCode());
+
+        exportMenu.add(hexadecimalItem);
+        exportMenu.add(binaryItem);
+        exportMenu.add(completeItem);
+
+        updateRecentFilesMenu();
+
+        menuBar.add(exportMenu);
 
         return menuBar;
     }
@@ -317,6 +336,51 @@ public class GUI extends JFrame {
         }
     }
 
+    private void exportHexadecimalCode() {
+        if (model != null) {
+            StringBuilder sb = new StringBuilder();
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object value = model.getValueAt(row, 1);
+                if (value != null) {
+                    sb.append(value.toString()).append("\n");
+                }
+            }
+
+            StringSelection selection = new StringSelection(sb.toString());
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+        }
+    }
+
+    private void exportBinaryCode() {
+        if (model != null) {
+            StringBuilder sb = new StringBuilder();
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object value = model.getValueAt(row, 2);
+                if (value != null) {
+                    sb.append(value.toString()).append("\n");
+                }
+            }
+
+            StringSelection selection = new StringSelection(sb.toString());
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+        }
+    }
+
+    private void exportCompleteCode() {
+        if (model != null) {
+            StringBuilder sb = new StringBuilder();
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object value = model.getValueAt(row, 3);
+                if (value != null) {
+                    sb.append(value.toString()).append("\n");
+                }
+            }
+
+            StringSelection selection = new StringSelection(sb.toString());
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+        }
+    }
+
     public void consoleInfo(String message) {
         consoleTextArea.append(message + "\n");
         String[] lines = consoleTextArea.getText().split("\n");
@@ -346,14 +410,14 @@ public class GUI extends JFrame {
             for (int i = 0; i < programInstructions.length; i++) {
                 String hex = String.format("0x%08X", programInstructions[i]);
                 String binary = String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0');
-                String decodedInstruction = Decoder.decodeInstruction(programInstructions[i]);
+                String decodedInstruction = Decoder.decodeInstructionInFormat(programInstructions[i]);
                 tableData[i][0] = "Line " + i;
                 tableData[i][1] = hex;
                 tableData[i][2] = binary;
                 tableData[i][3] = decodedInstruction;
             }
 
-            DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
+            model = new DefaultTableModel(tableData, columnNames) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
                     return false;
@@ -363,6 +427,7 @@ public class GUI extends JFrame {
             JTable contentTable = new JTable(model);
             contentTable.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
             contentTable.setRowHeight(20);
+            contentTable.setCellSelectionEnabled(true);
 
             TableColumnModel columnModel = contentTable.getColumnModel();
             columnModel.getColumn(0).setPreferredWidth(70);

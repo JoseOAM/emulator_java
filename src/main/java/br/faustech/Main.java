@@ -11,7 +11,6 @@ import br.faustech.memory.Memory;
 import br.faustech.reader.ProgramUtils;
 import lombok.Getter;
 import lombok.extern.java.Log;
-import org.bytedeco.javacv.FrameGrabber;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,10 +44,9 @@ public class Main {
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) throws IOException {
-        LOG = args.length > 1 && args[1].equals("--log");
+        LOG = args.length > 0 && args[0].equals("--log");
         configFile = new ConfigFile();
         ProgramUtils programUtils = new ProgramUtils();
-
         gui = new GUI(new ArgsListener() {
             @Override
             public void onArgsSelected(String path) {

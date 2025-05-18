@@ -2,7 +2,6 @@ package br.faustech.gui;
 
 import javax.swing.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class RegisterUpdater extends SwingWorker<Void, int[]> {
     private final int[] registerValues;
