@@ -70,6 +70,7 @@ public class Main {
                             if (gpu.getState() == Thread.State.TERMINATED) {
                                 gui.getRegisterUpdater().stopUpdater();
                                 gui.consoleInfo("Emulator stopped");
+                                gui.stopEmulator();
                                 gpu.interrupt();
                                 cpu.interrupt();
                                 configFile.saveHistory(gui.getRecentFiles(), gui.getDarkModeEnabled());

@@ -27,6 +27,7 @@ public class CPU extends CPUInterrupt {
     private final int[] csrRegisters = new int[4096];   // CSR registers
     private final Bus bus;                              // The bus to be used by the CPU for memory access
     private int programCounter = 0;                     // The program counter to keep track of the current instruction
+    private GUI gui;                                    // GUI reference to call specific functions if necessary
 
     /**
      * Constructs a CPU with a specified bus.
@@ -37,6 +38,7 @@ public class CPU extends CPUInterrupt {
         initializeRegisters();
         this.bus = bus;
         if (gui != null) {
+            this.gui = gui;
             gui.setRegisterUpdater(registers);
         }
     }
@@ -150,6 +152,8 @@ public class CPU extends CPUInterrupt {
             int instruction = bus.read(programCounter, programCounter + 4)[0];
             executeInstruction(instruction);
         } catch (MemoryException e) {
+            System.out.println(String.valueOf(e));
+            gui.consoleInfo(String.valueOf(e));
             throw new RuntimeException(e);
         }
     }
@@ -166,94 +170,99 @@ public class CPU extends CPUInterrupt {
         String[] parts = decodedInstruction.split(" ");// Parse the decoded instruction
         String operation = parts[0];
         programCounter += 4; // Increment PC for next instruction, by default
-        switch (operation) {
-            case "add":
-                executeRType(parts, Integer::sum);
-                break;
-            case "sub":
-                executeRType(parts, (a, b) -> a - b);
-                break;
-            case "sll":
-                executeRType(parts, (a, b) -> a << b);
-                break;
-            case "slt":
-                executeRType(parts, (a, b) -> a < b ? 1 : 0);
-                break;
-            case "sltu":
-                executeRType(parts, (a, b) -> Integer.compareUnsigned(a, b) < 0 ? 1 : 0);
-                break;
-            case "xor":
-                executeRType(parts, (a, b) -> a ^ b);
-                break;
-            case "srl":
-                executeRType(parts, (a, b) -> a >>> b);
-                break;
-            case "sra":
-                executeRType(parts, (a, b) -> a >> b);
-                break;
-            case "or":
-                executeRType(parts, (a, b) -> a | b);
-                break;
-            case "and":
-                executeRType(parts, (a, b) -> a & b);
-                break;
-            case "lui":
-            case "auipc":
-                executeUType(parts);
-                break;
-            case "jal":
-                executeJType(parts);
-                break;
-            case "jalr":
-                executeITypeJumpAndLinkRegister(parts);
-                break;
-            case "lb":
-            case "lh":
-            case "lw":
-            case "lbu":
-            case "lhu":
-                executeITypeLoad(parts);
-                break;
-            case "beq":
-            case "bne":
-            case "blt":
-            case "bge":
-            case "bltu":
-            case "bgeu":
-                executeBType(parts);
-                break;
-            case "sb":
-            case "sh":
-            case "sw":
-                executeSType(parts);
-                break;
-            case "addi":
-            case "slti":
-            case "sltiu":
-            case "xori":
-            case "ori":
-            case "andi":
-            case "slli":
-            case "srli":
-            case "srai":
-                executeITypeImmediate(parts);
-                break;
-            case "ecall":
-            case "ebreak":
-            case "mret":
-                executeEType(parts);
-                break;
-            case "csrrw":
-            case "csrrs":
-            case "csrrc":
-            case "csrrwi":
-            case "csrrsi":
-            case "csrrci":
-                executeITypeControlStatusRegister(parts);
-                break;
-            default:
-                programCounter -= 4; // Revert PC increment if the operation is unknown
-                throw new RuntimeException(String.format("Unknown operation: %s", operation));
+        try {
+            switch (operation) {
+                case "add":
+                    executeRType(parts, Integer::sum);
+                    break;
+                case "sub":
+                    executeRType(parts, (a, b) -> a - b);
+                    break;
+                case "sll":
+                    executeRType(parts, (a, b) -> a << b);
+                    break;
+                case "slt":
+                    executeRType(parts, (a, b) -> a < b ? 1 : 0);
+                    break;
+                case "sltu":
+                    executeRType(parts, (a, b) -> Integer.compareUnsigned(a, b) < 0 ? 1 : 0);
+                    break;
+                case "xor":
+                    executeRType(parts, (a, b) -> a ^ b);
+                    break;
+                case "srl":
+                    executeRType(parts, (a, b) -> a >>> b);
+                    break;
+                case "sra":
+                    executeRType(parts, (a, b) -> a >> b);
+                    break;
+                case "or":
+                    executeRType(parts, (a, b) -> a | b);
+                    break;
+                case "and":
+                    executeRType(parts, (a, b) -> a & b);
+                    break;
+                case "lui":
+                case "auipc":
+                    executeUType(parts);
+                    break;
+                case "jal":
+                    executeJType(parts);
+                    break;
+                case "jalr":
+                    executeITypeJumpAndLinkRegister(parts);
+                    break;
+                case "lb":
+                case "lh":
+                case "lw":
+                case "lbu":
+                case "lhu":
+                    executeITypeLoad(parts);
+                    break;
+                case "beq":
+                case "bne":
+                case "blt":
+                case "bge":
+                case "bltu":
+                case "bgeu":
+                    executeBType(parts);
+                    break;
+                case "sb":
+                case "sh":
+                case "sw":
+                    executeSType(parts);
+                    break;
+                case "addi":
+                case "slti":
+                case "sltiu":
+                case "xori":
+                case "ori":
+                case "andi":
+                case "slli":
+                case "srli":
+                case "srai":
+                    executeITypeImmediate(parts);
+                    break;
+                case "ecall":
+                case "ebreak":
+                case "mret":
+                    executeEType(parts);
+                    break;
+                case "csrrw":
+                case "csrrs":
+                case "csrrc":
+                case "csrrwi":
+                case "csrrsi":
+                case "csrrci":
+                    executeITypeControlStatusRegister(parts);
+                    break;
+                default:
+                    programCounter -= 4; // Revert PC increment if the operation is unknown
+                    gui.consoleInfo(String.format("Unknown operation: %s", operation));
+                    throw new RuntimeException(String.format("Unknown operation: %s", operation));
+            }
+        } catch (Exception e) {
+            throw new MemoryException(e.getMessage());
         }
     }
 

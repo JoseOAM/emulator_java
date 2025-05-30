@@ -10,7 +10,7 @@ import java.lang.Thread.State;
 
 public class GPUTest {
 
-    private static final String VIDEO_PATH = "";
+    private static final String VIDEO_PATH = "src/test/demos/que.mp4";
 
     private static final int WIDTH = 320;
 

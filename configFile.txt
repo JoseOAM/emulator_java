@@ -1,10 +1,11 @@
 {
     "recentFiles": [
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\test.txt",
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\ufms_demo.txt",
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\paliteiro_demo.txt",
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\interrupt_demo.txt",
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\color_demo.txt"
+        "C:\\msys64\\code\\program.bin",
+        "C:\\msys64\\code\\interrupt_mine.txt",
+        "C:\\msys64\\code\\testing.txt",
+        "C:\\msys64\\code\\color_test.bin",
+        "C:\\msys64\\code\\interrupt_test.bin",
+        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\interrupt_demo.txt"
     ],
     "darkMode": true
 }

@@ -357,7 +357,7 @@ public class Decoder {
             default -> "unknown";
         };
 
-        return String.format("%s %d, %d(x%d)", operation, rd, imm, rs1);
+        return String.format("%s x%d, %d(x%d)", operation, rd, imm, rs1);
     }
 
     /**

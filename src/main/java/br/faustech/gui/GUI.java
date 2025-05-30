@@ -8,19 +8,24 @@ import br.faustech.gpu.GPU;
 import br.faustech.reader.ProgramUtils;
 
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 public class GUI extends JFrame {
     private int[] programInstructions;
@@ -37,9 +42,9 @@ public class GUI extends JFrame {
     private final List<String> recentFiles = new ArrayList<>();
     private AtomicBoolean darkModeEnabled = new AtomicBoolean();
     private final JMenu recentFilesMenu = new JMenu("Recent Files");
-    JTextArea consoleTextArea = new JTextArea();
+    private final JTextArea consoleTextArea = new JTextArea();
     private final ConfigFile configFile;
-    private static final int MAX_RECENT_FILES = 5;
+    private static final int MAX_RECENT_FILES = 10;
     private RegisterUpdater updater;
     private GPU gpu;
     private CPU cpu;
@@ -411,7 +416,7 @@ public class GUI extends JFrame {
                 String hex = String.format("0x%08X", programInstructions[i]);
                 String binary = String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0');
                 String decodedInstruction = Decoder.decodeInstructionInFormat(programInstructions[i]);
-                tableData[i][0] = "Line " + i;
+                tableData[i][0] = i;
                 tableData[i][1] = hex;
                 tableData[i][2] = binary;
                 tableData[i][3] = decodedInstruction;
@@ -424,11 +429,64 @@ public class GUI extends JFrame {
                 }
             };
 
+            TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+            sorter.setComparator(0, Comparator.comparingInt(o -> Integer.parseInt(o.toString())));
+            JPanel filterPanel = new JPanel(new BorderLayout());
+            JTextField filterField = new JTextField();
+            filterField.setPreferredSize(new Dimension(150, 24));
+
+            JButton closeButton = new JButton("X");
+            closeButton.setMargin(new Insets(0, 5, 0, 5));
+            closeButton.addActionListener(e -> {
+                contentPanel.remove(filterPanel);
+                contentPanel.revalidate();
+                contentPanel.repaint();
+            });
+
+            filterPanel.add(filterField, BorderLayout.CENTER);
+            filterPanel.add(closeButton, BorderLayout.EAST);
+            InputMap inputMap = contentPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ActionMap actionMap = contentPanel.getActionMap();
+            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK), "showFilterField");
+
+            actionMap.put("showFilterField", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (!Arrays.asList(contentPanel.getComponents()).contains(filterPanel)) {
+                        contentPanel.add(filterPanel, BorderLayout.NORTH);
+                        contentPanel.revalidate();
+                        contentPanel.repaint();
+                        filterField.requestFocusInWindow();
+                    }
+                }
+            });
+            filterField.getDocument().addDocumentListener(new DocumentListener() {
+                public void insertUpdate(DocumentEvent e) {
+                    applyFilter();
+                }
+
+                public void removeUpdate(DocumentEvent e) {
+                    applyFilter();
+                }
+
+                public void changedUpdate(DocumentEvent e) {
+                    applyFilter();
+                }
+
+                private void applyFilter() {
+                    String text = filterField.getText();
+                    if (text.trim().isEmpty()) {
+                        sorter.setRowFilter(null);
+                    } else {
+                        sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text)));
+                    }
+                }
+            });
+
             JTable contentTable = new JTable(model);
             contentTable.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
             contentTable.setRowHeight(20);
             contentTable.setCellSelectionEnabled(true);
-
             TableColumnModel columnModel = contentTable.getColumnModel();
             columnModel.getColumn(0).setPreferredWidth(70);
             columnModel.getColumn(1).setPreferredWidth(120);
@@ -438,41 +496,7 @@ public class GUI extends JFrame {
             JScrollPane tableScrollPane = new JScrollPane(contentTable);
             contentPanel.removeAll();
             contentPanel.add(tableScrollPane, BorderLayout.CENTER);
-
-//            programHexadecimalArea = new JTextArea();
-//            programBinaryArea = new JTextArea();
-//
-//            programHexadecimalArea.setEditable(false);
-//            programBinaryArea.setEditable(false);
-//
-//            programHexadecimalArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-//            programBinaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-//
-//            StringBuilder hexadecimalContent = new StringBuilder();
-//            for (int i = 0; i < programInstructions.length; i++) {
-//                hexadecimalContent.append("Line ").append(i).append(": 0x")
-//                        .append(String.format("%08X", programInstructions[i]))
-//                        .append("\n");
-//            }
-//            programHexadecimalArea.setText(hexadecimalContent.toString());
-//
-//            StringBuilder binaryContent = new StringBuilder();
-//            for (int i = 0; i < programInstructions.length; i++) {
-//                binaryContent.append("Line ").append(i).append(": ")
-//                        .append(String.format("%32s", Integer.toBinaryString(programInstructions[i])).replace(' ', '0'))
-//                        .append("\n");
-//            }
-//            programBinaryArea.setText(binaryContent.toString());
-//
-//            JScrollPane scrollHexadecimalPane = new JScrollPane(programHexadecimalArea);
-//            JScrollPane scrollBinaryPane = new JScrollPane(programBinaryArea);
-//
-//            contentPanel.removeAll();
-//
-//            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-//                    scrollHexadecimalPane, scrollBinaryPane);
-//            splitPane.setResizeWeight(0.5);
-//            contentPanel.add(splitPane, BorderLayout.CENTER);
+            contentTable.setRowSorter(sorter);
 
             if (darkModeEnabled.get()) {
                 setColorsRecursively(getContentPane(), Color.DARK_GRAY, Color.WHITE);
@@ -536,7 +560,7 @@ public class GUI extends JFrame {
         }
     }
 
-    private void stopEmulator() {
+    public void stopEmulator() {
         if (cpu != null && cpu.isAlive()) {
             cpu.interrupt();
         }

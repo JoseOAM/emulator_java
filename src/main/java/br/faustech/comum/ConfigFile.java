@@ -10,7 +10,7 @@ import org.json.JSONObject;
 public class ConfigFile {
 
     private static final String HISTORY_FILE = "configFile.txt";
-    private static final int MAX_RECENT_FILES = 5;
+    private static final int MAX_RECENT_FILES = 10;
 
     public void loadHistory(List<String> recentFiles, AtomicBoolean darkModeEnabled) {
         File file = new File(HISTORY_FILE);
