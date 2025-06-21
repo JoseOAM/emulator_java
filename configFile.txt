@@ -1,11 +1,5 @@
 {
     "recentFiles": [
-        "C:\\msys64\\code\\program.bin",
-        "C:\\msys64\\code\\interrupt_mine.txt",
-        "C:\\msys64\\code\\testing.txt",
-        "C:\\msys64\\code\\color_test.bin",
-        "C:\\msys64\\code\\interrupt_test.bin",
-        "E:\\Code\\TCC\\emulator\\src\\test\\demos\\interrupt_demo.txt"
     ],
     "darkMode": true
 }
